@@ -9,7 +9,85 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from 'chart.js';
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const EnterpriseAi = () => {
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalOrders: 0,
+    pendingOrders: 0,
+    totalSales: 0,
+  });
+  const [orderSummary, setOrderSummary] = useState({
+    received: 0,
+    shipping: 0,
+    complaint: 0,
+    canceled: 0,
+    done: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [orders, setOrders] = useState([]);
 
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [userRes, orderRes] = await Promise.all([
+          axios.get(`${baseurl}/api/allUsers`),
+          axios.get(`${baseurl}/api/orders`),
+        ]);
+
+        // Ensure data is available and valid
+        const usersData = userRes.data?.data || [];
+        const ordersData = orderRes.data?.data || [];
+
+        // Calculate order summary
+        const summary = {
+          received: ordersData.filter(order => order.status === 'Received').length,
+          shipping: ordersData.filter(order => order.status === 'Shipping').length,
+          complaint: ordersData.filter(order => order.status === 'Complaint').length,
+          canceled: ordersData.filter(order => order.status === 'Canceled').length,
+          done: ordersData.filter(order => order.status === 'Done').length
+        };
+        setOrderSummary(summary);
+
+        // Ensure total sales calculation handles potential null/undefined values
+        const totalSales = ordersData.reduce((total, order) => {
+          const amount = parseFloat(order.total_amount || 0);
+          return total + (isNaN(amount) ? 0 : amount);
+        }, 0);
+
+        // Update stats with safe fallback values
+        setStats({
+          totalUsers: usersData.length || 0,
+          totalOrders: ordersData.length || 0,
+          pendingOrders: summary.received || 0,
+          totalSales: totalSales
+        });
+
+        // Set orders state
+        setOrders(ordersData);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        
+        // Set fallback values in case of error
+        setStats({
+          totalUsers: 0,
+          totalOrders: 0,
+          pendingOrders: 0,
+          totalSales: 0
+        });
+        
+        setOrderSummary({
+          received: 0,
+          shipping: 0,
+          complaint: 0,
+          canceled: 0,
+          done: 0
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
   const data = {
     labels: ['Product 1', 'Product 2', 'Product 3'], // Labels for the sections
     datasets: [
@@ -160,7 +238,7 @@ const EnterpriseAi = () => {
         {[
           {
             title: 'Total User',
-            value: '40,689',
+            value: stats.totalUsers,
             percentage: '8.5% Up from yesterday',
             icon: 'bi-people',
             iconClass: 'text-primary',
@@ -168,7 +246,7 @@ const EnterpriseAi = () => {
           },
           {
             title: 'Total Order',
-            value: '10,293',
+            value: stats.totalOrders,
             percentage: '1.3% Up from past week',
             icon: 'bi-box',
             iconClass: 'text-warning',
@@ -176,7 +254,7 @@ const EnterpriseAi = () => {
           },
           {
             title: 'Total Sales',
-            value: 'Rs 89,000',
+            value: `Rs ${stats.totalSales.toFixed(2)}`,
             percentage: '4.3% Down from yesterday',
             icon: 'bi-graph-up',
             iconClass: 'text-success',
@@ -184,7 +262,7 @@ const EnterpriseAi = () => {
           },
           {
             title: 'Total Pending',
-            value: '2,040',
+            value: stats.pendingOrders,
             percentage: '1.8% Up from yesterday',
             icon: 'bi-clock',
             iconClass: 'text-danger',
