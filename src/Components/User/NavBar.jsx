@@ -75,11 +75,11 @@ const NavBar = () => {
 
           {/* Center Section: Logo */}
           <div className="d-flex align-items-center">
-            <img
+            <a href="/" ><img
               src={RIM} // Replace with your logo path
               alt="RIM Logo"
               style={{ height: "50px" }}
-            />
+            /></a>
           </div>
 
           {/* Right Section: Profile Image */}
