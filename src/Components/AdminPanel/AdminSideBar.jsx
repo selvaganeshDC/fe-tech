@@ -40,6 +40,13 @@ const AdminSideBar = ({ handleBackClick }) => {
     window.location.href = '/Auth/Login';
   };
 
+  // const handleLogout = () => {
+  //   // Your logout logic here, e.g., clearing user data, making an API call to log out, etc.
+  //   console.log('Logged out');
+  //   // After logout logic, you can redirect to a login page, or reset the app state.
+  //   window.location.href = '/login'; // Example redirect
+  // };
+
   return (
     <>
      {isLargeScreen ? (
@@ -197,13 +204,21 @@ const AdminSideBar = ({ handleBackClick }) => {
               </a>
             </li>
             <li className="mb-2">
-              <a
+            <button
+                type="button"
+                className="btn btn-danger"
+                onClick={handleLogout}
+                data-bs-dismiss="modal"
+              >
+                Logout
+              </button>
+              {/* <a
                 href=""
                 className="d-flex align-items-center py-2 text-dark text-decoration-none"
                 onClick={handleLogout}
               >
                 <LogOut className="me-3" /> Logout
-              </a>
+              </a> */}
             </li>
           </ul>
         </div>
@@ -334,6 +349,49 @@ const AdminSideBar = ({ handleBackClick }) => {
   </div>
 </div>
    )}
+   <div
+        className="modal fade"
+        id="logoutModal"
+        tabIndex="-1"
+        aria-labelledby="logoutModalLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog modal-dialog-centered modal-md">
+          <div className="modal-content" style={{ height: '300px', display: 'flex', justifyContent: 'center' }}>
+            <div className="modal-header">
+              <h5 className="modal-title" id="logoutModalLabel">
+                Confirm Logout
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              Are you sure you want to log out?
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={handleLogout}
+                data-bs-dismiss="modal"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 };

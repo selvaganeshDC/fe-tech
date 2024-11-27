@@ -146,7 +146,7 @@ const Forum = () => {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5003/api/forums")
+    fetch("https://develop.rimhub.in/api/forums")
       .then((response) => response.json())
       .then((data) => {
         setForums(data.data || []); // Ensure fallback to empty array
