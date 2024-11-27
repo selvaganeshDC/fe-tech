@@ -23,7 +23,7 @@ const Login = () => {
         localStorage.setItem('userData', JSON.stringify(response.data.data));
         setError(null);
         if (response.data.role === 'admin') {
-          navigate('/AdminDashboard');
+          navigate('/AdminDashboard/EnterpriseAi');
         } else {
           navigate('/');
         }
