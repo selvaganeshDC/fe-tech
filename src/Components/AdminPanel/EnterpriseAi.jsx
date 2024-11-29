@@ -9,6 +9,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from 'chart.js';
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 const EnterpriseAi = () => {
+  const user = JSON.parse(localStorage.getItem('userData'));
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalOrders: 0,
@@ -193,16 +194,16 @@ const EnterpriseAi = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!selectedProduct || !formData.quantity || !formData.distributor_name || !formData.phone_number) {
+    if (!selectedProduct || !formData.quantity || !formData.name || !formData.phone_number) {
       alert("Please fill in all required fields.");
       return;
     }
 
     const submissionData = {
+      user_id: user.aid,
       product_name: selectedProduct,
       quantity: formData.quantity,
-      distributor_name: formData.distributor_name,
-      location: formData.location,
+      name: formData.name,
       phone_number: formData.phone_number,
     };
 
@@ -212,8 +213,7 @@ const EnterpriseAi = () => {
         alert("Requirement submitted successfully!");
         setFormData({
           quantity: "",
-          distributor_name: "",
-          location: "",
+          name: "",
           phone_number: "",
         });
         fetchProducts();
@@ -354,7 +354,7 @@ const EnterpriseAi = () => {
                         <strong>Needed Quantity : </strong> {forum.quantity || "N/A"}
                       </div>
                       <div className="mb-2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <strong>Post by : </strong> {forum.distributor_name || "Unknown"}
+                        <strong>Post by : </strong> {forum.name || "Unknown"}
                       </div>
                       <div className="mb-2" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <strong>Close Date : </strong> {forum.close_date ? new Date(forum.close_date).toLocaleDateString() : "No Date"}
@@ -373,20 +373,42 @@ const EnterpriseAi = () => {
 
       {/* Order Summary and Charts Row */}
       <div className="row">
-  <div className="col-md-4">
-    <div className="card h-100">
-      <div className="card-body">
-        <h5 className="card-title">Order Summary</h5>
-        <div className="list-group">
-          <div className="list-group-item bg-light">Received (20)</div>
-          <div className="list-group-item bg-warning bg-opacity-10">Shipping (39)</div>
-          <div className="list-group-item bg-danger bg-opacity-10">Complaint (1)</div>
-          <div className="list-group-item bg-danger bg-opacity-10">Canceled (4)</div>
-          <div className="list-group-item bg-success bg-opacity-10">Done (2034)</div>
+      <div className="col-md-4 mb-4">
+          <div className="card h-100">
+            <div className="card-body">
+              <h5 className="card-title mb-4">Order Summary</h5>
+              <div className="list-group">
+                <div className="list-group-item bg-light">
+                  Received ({orderSummary.received})
+                </div>
+                <div
+                  className="list-group-item"
+                  style={{ backgroundColor: "#FFF8E7" }}
+                >
+                  Shipping ({orderSummary.shipping})
+                </div>
+                <div
+                  className="list-group-item"
+                  style={{ backgroundColor: "#FFE7E7" }}
+                >
+                  Complaint ({orderSummary.complaint})
+                </div>
+                <div
+                  className="list-group-item"
+                  style={{ backgroundColor: "#FFE7E7" }}
+                >
+                  Canceled ({orderSummary.canceled})
+                </div>
+                <div
+                  className="list-group-item"
+                  style={{ backgroundColor: "#E7FFE7" }}
+                >
+                  Done ({orderSummary.done})
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  </div>
 
   <div className="col-md-4">
     <div className="card h-100">
@@ -441,7 +463,7 @@ const EnterpriseAi = () => {
   </div>
 </div>
 
-      {isModalOpen && (
+{isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
             <span className="close-button" onClick={toggleModal}>
@@ -480,24 +502,13 @@ const EnterpriseAi = () => {
                 />
               </div>
               <div className="mb-3">
-                <label>Distributor Name</label>
+                <label>Name</label>
                 <input
                   type="text"
-                  name="distributor_name"
+                  name="name"
                   className="form-control"
                   placeholder="Enter Your Name"
-                  value={formData.distributor_name}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="mb-3">
-                <label>Distributor Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  className="form-control"
-                  placeholder="Enter Location"
-                  value={formData.location}
+                  value={formData.name}
                   onChange={handleInputChange}
                 />
               </div>

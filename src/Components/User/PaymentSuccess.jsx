@@ -1,10 +1,23 @@
 import React from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import NavBar from './NavBar';
 
 const PaymentSuccess = ({ message}) => {
-    const navigate = useNavigate()
+  const navigate = useNavigate()
+  useEffect(() => {
+    const LoggedUser = JSON.parse(localStorage.getItem("userData"));
+    if (!LoggedUser) {
+      navigate("/");
+    } else if (LoggedUser.role === "admin") {
+      navigate("/AdminDashboard/EnterpriseAi");
+    }
+    else if(LoggedUser.role === "technician"){
+      navigate('/User/StoreDetails');
+    }
+  }, [navigate]); // Removed LoggedUser from dependency array
+
     const handleContinueShopping = ()=>{
         navigate('/')
     }
@@ -18,7 +31,7 @@ const PaymentSuccess = ({ message}) => {
         <div className="container">
           <div className="row justify-content-center">
             <div className="col-12 col-md-6 text-center">
-              <div className="bg-white rounded-4 p-4 shadow-sm">
+              <div className="bg-white p-4">
                 {/* Success Icon */}
                 <div className="mb-4">
                   <div className="rounded-circle d-inline-flex align-items-center justify-content-center" 

@@ -13,9 +13,12 @@ const UserMainPage = () => {
     if (!LoggedUser) {
       navigate("/");
     } else if (LoggedUser.role === "admin") {
-      navigate("/AdminDashboard");
+      navigate("/AdminDashboard/EnterpriseAi");
     }
-  }, [navigate]); // Removed LoggedUser from dependency array
+    else if(LoggedUser.role === "technician"){
+      navigate('/User/StoreDetails');
+    }
+  }, [navigate]);  // Removed LoggedUser from dependency array
 
   return (
     <>

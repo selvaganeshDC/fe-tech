@@ -13,18 +13,21 @@ const Technicians = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const itemsPerPage = 6;
-
   useEffect(() => {
     const fetchTechnicians = async () => {
       try {
         const response = await axios.get(baseurl + '/api/allUsers');
-        setTechnicians(response.data.data || []);
+        // Filter technicians with role 'technician' right when setting the state
+        const filteredTechnicians = (response.data.data || []).filter(
+          technician => technician.role === 'technician'
+        );
+        setTechnicians(filteredTechnicians);
       } catch (error) {
         console.error('Error fetching technicians:', error);
         setTechnicians([]);
       }
     };
-
+  
     fetchTechnicians();
   }, []);
 

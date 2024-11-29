@@ -9,7 +9,10 @@ const app = express();
 
 app.use(express.urlencoded({extended : true}));
 app.use(express.json());
-app.use(cors());
+app.use(cors({ 
+  origin: '*' 
+  //   origin: 'https://develop.rimhub.in'
+}));
 
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

@@ -1,7 +1,72 @@
-import React from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
+import React, { useState, useEffect } from "react";
+import axios from "axios"; 
+import baseurl from "../ApiService/ApiService";
+import { Pagination } from 'react-bootstrap';
+import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
+import {
+  Box,
+  Search,
+  Package,
+  Users,
+  TrendingUp,
+  Clock,
+} from "lucide-react";
+import ShipmentDetails from "./ShipmentsDetails";
 
 const Shipments = () => {
+  const [showShipmentDetails, setShowShipmentDetails] = useState(false);
+  const [selectedOrderOid, setSelectedOrderOid] = useState(null);
+  const [shipments, setShipments] = useState([]); 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const itemsPerPage = 6;
+
+  useEffect(() => {
+    // Fetch shipments data from API
+    axios.get(`${baseurl}/api/getAllShipments`)
+      .then((response) => {
+        if (response.data && response.data.data) {
+          setShipments(response.data.data); 
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching shipments:", error);
+      });
+
+    const pendingShipmentOid = localStorage.getItem("pendingShipmentOid");
+    if (pendingShipmentOid) {
+      setSelectedOrderOid(pendingShipmentOid);
+      setShowShipmentDetails(true);
+      localStorage.removeItem("pendingShipmentOid");
+    }
+  }, []);
+
+  const handleShipmentClose = () => {
+    setShowShipmentDetails(false);
+    setSelectedOrderOid(null);
+  };
+
+  // Filter shipments based on search term
+  const filteredShipments = shipments.filter(shipment =>
+    shipment.shipment_items.some(item => 
+      item.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+    ) ||
+    shipment.distributor_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    shipment.dispatch_address.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Pagination calculations
+  const indexOfLastShipment = currentPage * itemsPerPage;
+  const indexOfFirstShipment = indexOfLastShipment - itemsPerPage;
+  const currentShipments = filteredShipments.slice(indexOfFirstShipment, indexOfLastShipment);
+  const totalPages = Math.ceil(filteredShipments.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
   const chartData = [
     { month: "Jan", orders: 20 },
     { month: "Feb", orders: 25 },
@@ -17,136 +82,227 @@ const Shipments = () => {
     { month: "Dec", orders: 26 },
   ];
 
-  const maxOrders = Math.max(...chartData.map((data) => data.orders));
-
-  const shipments = [
-    {
-      id: 1,
-      product: "AC Spares",
-      org: "Tools Marts",
-      date: "Nov 27, 2024",
-      destination: "Coimbatore - Kerala",
+  const statusStyles = {
+    'Shipment': {
+      color: '#267309',
+      background: '#E7F7E1',
+      borderRadius: '10px',
+      padding: '6px 12px',
+      display: 'inline-block'
     },
-    {
-      id: 2,
-      product: "AC Spares",
-      org: "Tools Marts",
-      date: "Nov 27, 2024",
-      destination: "Coimbatore - Kerala",
+    'Delivered': {
+      color: '#267309',
+      background: '#E7F7E1',
+      borderRadius: '10px',
+      padding: '6px 12px',
+      display: 'inline-block'
     },
-    {
-      id: 3,
-      product: "AC Spares",
-      org: "Tools Marts",
-      date: "Nov 27, 2024",
-      destination: "Coimbatore - Kerala",
+    'Canceled': {
+      color: '#808080',
+      background: '#E5E7E5',
+      borderRadius: '10px',
+      padding: '6px 12px',
+      display: 'inline-block'
     },
-    {
-      id: 4,
-      product: "AC Spares",
-      org: "Tools Marts",
-      date: "Nov 27, 2024",
-      destination: "Coimbatore - Kerala",
-    },
-  ];
+  };
 
   return (
-    <div className="container py-4">
-      {/* Shipment Analysis Section */}
+    <div className="container-fluid py-4" style={{ backgroundColor: "#F8F9FA" }}>
       <div className="row g-4">
-        <div className="col-lg-8">
-          <div className="card shadow-sm">
-            <div className="card-body">
-              <h5 className="card-title">Shipment Analysis</h5>
-              <div className="d-flex align-items-end justify-content-between mt-4">
-                {chartData.map((data, index) => (
-                  <div key={index} className="text-center">
-                    <div
-                      className={`bg-primary ${
-                        data.orders === maxOrders ? "bg-opacity-75" : "bg-opacity-50"
-                      }`}
-                      style={{
-                        width: "30px",
-                        height: `${data.orders * 3}px`,
-                        marginBottom: "5px",
-                        borderRadius: "4px",
-                      }}
-                    ></div>
-                    <small className="d-block">{data.month}</small>
-                  </div>
-                ))}
+        <div className="col-12 col-xl-8">
+          <div className="card border-0 shadow-sm h-100">
+            <div className="card-body p-3 p-md-4">
+              <div className="d-flex flex-wrap align-items-center gap-2 mb-4">
+                <div className="bg-primary bg-opacity-10 p-2 rounded">
+                  <Box className="text-primary" size={20} />
+                </div>
+                <h5 className="mb-0">Shipment Analysis</h5>
+                <span className="badge bg-primary px-3 py-2 rounded-pill">
+                  Group 35
+                </span>
               </div>
-            </div>
-          </div>
-        </div>
-        <div className="col-lg-4">
-          <div className="card shadow-sm">
-            <div className="card-body">
-              <h6 className="card-title">Statistics</h6>
-              <div className="row gy-2 mt-3">
-                <div className="col-12">
-                  <div className="p-3 bg-light rounded shadow-sm">
-                    <h6 className="mb-1">Total Delivery</h6>
-                    <h4 className="fw-bold">40,689</h4>
-                  </div>
-                </div>
-                <div className="col-12">
-                  <div className="p-3 bg-light rounded shadow-sm">
-                    <h6 className="mb-1">On Delivery</h6>
-                    <h4 className="fw-bold">10,293</h4>
-                  </div>
-                </div>
-                <div className="col-12">
-                  <div className="p-3 bg-light rounded shadow-sm">
-                    <h6 className="mb-1">Total Pending</h6>
-                    <h4 className="fw-bold">2,040</h4>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Shipment List Section */}
-      <div className="card mt-4 shadow-sm">
-        <div className="card-body">
-          <h5 className="card-title">Shipping List</h5>
-          <input
-            type="text"
-            className="form-control mb-3"
-            placeholder="Search Shipping list"
-          />
-          <div className="table-responsive">
-            <table className="table table-hover">
-              <thead className="table-light">
-                <tr>
-                  <th className="py-3 px-4">ID</th>
-                  <th className="py-3 px-4">Product</th>
-                  <th className="py-3 px-4">Organization Name</th>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Destination</th>
-                  <th className="py-3 px-4">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {shipments.map((item) => (
-                  <tr key={item.id}>
-                    <td className="py-3 px-4">{item.id}</td>
-                    <td className="py-3 px-4">{item.product}</td>
-                    <td className="py-3 px-4">{item.org}</td>
-                    <td className="py-3 px-4">{item.date}</td>
-                    <td className="py-3 px-4">{item.destination}</td>
-                    <td className="py-3 px-4">
-                      <button className="btn btn-success btn-sm">Shipment</button>
+              <div className="chart-container position-relative" style={{ height: "300px" }}>
+                <div className="d-flex align-items-end justify-content-between h-100 overflow-x-auto pb-4">
+                  {chartData.map((data, index) => (
+                    <div key={index} className="text-center mx-1" style={{ minWidth: "30px" }}>
+                      <div
+                        className={`${
+                          data.month === "Aug"
+                            ? "bg-primary"
+                            : "bg-primary bg-opacity-10"
+                        }`}
+                        style={{
+                          height:`${(data.orders / 35) * 200}px`,
+                          borderRadius: "4px",
+                        }}
+                      ></div>
+                      <small className="d-block mt-2 text-muted">
+                        {data.month}
+                      </small>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-12 col-lg-4">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body p-4">
+              <div className="d-flex flex-column gap-3">
+                <div className="p-3 rounded" style={{ backgroundColor: "#F5F9FF" }}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                      <Users size={20} className="text-primary opacity-75" />
+                      <span className="text-secondary">Total Delivery</span>
+                    </div>
+                    <h3 className="mb-0 fw-bold">40,689</h3>
+                  </div>
+                  <div className="d-flex align-items-center gap-1 mt-2">
+                    <TrendingUp size={16} className="text-success" />
+                    <span className="text-success" style={{ fontSize: "0.875rem" }}>
+                      8.5% Up from yesterday
+                    </span>
+                  </div>
+                </div>
+                <div className="p-3 rounded" style={{ backgroundColor: "#FFFAF0" }}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                      <Package size={20} className="text-warning opacity-75" />
+                      <span className="text-secondary">On Delivery</span>
+                    </div>
+                    <h3 className="mb-0 fw-bold">10,293</h3>
+                  </div>
+                  <div className="d-flex align-items-center gap-1 mt-2">
+                    <TrendingUp size={16} className="text-success" />
+                    <span className="text-success" style={{ fontSize: "0.875rem" }}>
+                      1.3% Up from past week
+                    </span>
+                  </div>
+                </div>
+                <div className="p-3 rounded" style={{ backgroundColor: "#FFF5F5" }}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex align-items-center gap-2">
+                      <Clock size={20} className="text-danger opacity-75" />
+                      <span className="text-secondary">Total Pending</span>
+                    </div>
+                    <h3 className="mb-0 fw-bold">2040</h3>
+                  </div>
+                  <div className="d-flex align-items-center gap-1 mt-2">
+                    <TrendingUp size={16} className="text-success" />
+                    <span className="text-success" style={{ fontSize: "0.875rem" }}>
+                      1.8% Up from yesterday
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-body p-4">
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="d-flex align-items-center gap-2">
+                  <div className="bg-primary bg-opacity-10 p-2 rounded">
+                    <Package className="text-primary" size={20} />
+                  </div>
+                  <h6 className="mb-0">All Shipments</h6>
+                </div>
+                <div className="d-flex gap-3">
+                  <div className="d-flex align-items-center gap-2">
+                    <Search size={18} />
+                    <input
+                      type="text"
+                      className="form-control form-control-sm"
+                      placeholder="Search Shipments"
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setCurrentPage(1); // Reset to first page when searching
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="table-responsive">
+                <table className="table table-striped mb-0">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Product Name</th>
+                      <th>Name</th>
+                      <th>Dispatch date</th>
+                      <th>Destination</th>
+                      <th>Shipment Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentShipments.length > 0 ? (
+                      currentShipments.map((shipment) => (
+                        <tr key={shipment.id}>
+                          <td className="py-3 px-4">{shipment.sid}</td>
+                          <td className="py-3 px-4">{shipment.shipment_items.map(item => item.product_name).join(', ')}</td>
+                          <td className="py-3 px-4">{shipment.distributor_name}</td>
+                          <td className="py-3 px-4">{shipment.dispatch_date}</td>
+                          <td className="py-3 px-4">{shipment.dispatch_address}</td>
+                          <td className="py-2 px-3">
+                      <span style={statusStyles[shipment.status] || {}}>
+                        {shipment.status}
+                      </span>
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="text-center">
+                          No shipments found
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="d-flex justify-content-between align-items-center mt-3">
+                <span>
+                  Showing {currentShipments.length} of {filteredShipments.length} entries
+                </span>
+                <Pagination>
+                  <Pagination.Prev
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <MdChevronLeft />
+                  </Pagination.Prev>
+                  {[...Array(totalPages)].map((_, index) => (
+                    <Pagination.Item
+                      key={index}
+                      active={currentPage === index + 1}
+                      onClick={() => handlePageChange(index + 1)}
+                    >
+                      {index + 1}
+                    </Pagination.Item>
+                  ))}
+                  <Pagination.Next
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <MdChevronRight />
+                  </Pagination.Next>
+                </Pagination>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+      {showShipmentDetails && (
+        <ShipmentDetails
+          shipmentOid={selectedOrderOid}
+          onClose={handleShipmentClose}
+        />
+      )}
     </div>
   );
 };

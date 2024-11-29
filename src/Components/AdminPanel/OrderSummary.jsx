@@ -3,12 +3,24 @@ import { Pagination } from 'react-bootstrap';
 import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import axios from 'axios';
 import baseurl from '../ApiService/ApiService';
+import ShipmentsDetails from './ShipmentsDetails';
+import { useNavigate } from 'react-router-dom';
 
 const OrderSummary = () => {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeFilter, setActiveFilter] = useState('All Orders');
+  const [selectedOrderOid, setSelectedOrderOid] = useState(null); // Track selected order oid
+  const [showShipmentDetails, setShowShipmentDetails] = useState(false); // Track modal visibility
   const itemsPerPage = 6;
+  // const [orders, setOrders] = useState([]);
+  // const [currentPage, setCurrentPage] = useState(1);
+  // const [activeFilter, setActiveFilter] = useState('All Orders');
+  // const [selectedOrderOid, setSelectedOrderOid] = useState(null); 
+  // const [showShipmentDetails, setShowShipmentDetails] = useState(false); 
+  // const itemsPerPage = 6;
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -22,10 +34,21 @@ const OrderSummary = () => {
     fetchOrders();
   }, []);
 
+  const filteredOrders = orders.filter(order => {
+    if (activeFilter === 'All Orders') return true;
+    return order.status === activeFilter;
+  });
+  
   const indexOfLastOrder = currentPage * itemsPerPage;
   const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
-  const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(orders.length / itemsPerPage);
+  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
+  // const indexOfLastOrder = currentPage * itemsPerPage;
+  // const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
+  // const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  // const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
 
   const handlePageChange = (pageNumber) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
@@ -37,9 +60,55 @@ const OrderSummary = () => {
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
   };
 
+  const handleFilterChange = (filter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+  };
+
+const handleShipmentClick = (oid) => {
+  navigate(`/AdminDashboard/Shipments/${oid}`); 
+};
+
+const statusStyles = {
+  'Received': {
+    color: '#267309',
+    background: '#E7F7E1',
+    borderRadius: '10px',
+    padding: '6px 12px',
+    display: 'inline-block'
+  },
+  'Shipping': {
+    color: '#6625F1',
+    background: '#F1EBFE',
+    borderRadius: '10px',
+    padding: '6px 12px',
+    display: 'inline-block'
+  },
+  'Complaint': {
+    color: '#FF1E00',
+    background: '#F9EDEB',
+    borderRadius: '10px',
+    padding: '6px 12px',
+    display: 'inline-block'
+  },
+  'Canceled': {
+    color: '#808080',
+    background: '#E5E7E5',
+    borderRadius: '10px',
+    padding: '6px 12px',
+    display: 'inline-block'
+  },
+  'Done': {
+    color: '#0C809A',
+    background: '#E1F3F7',
+    borderRadius: '10px',
+    padding: '6px 12px',
+    display: 'inline-block'
+  }
+};
+
   return (
     <div className="container mt-4">
-      {/* Search Box */}
       <div className="searches row align-items-center gx-3 mt-3 mb-3">
         {/* Search Input */}
         <div className="col-12 col-md-8">
@@ -64,43 +133,22 @@ const OrderSummary = () => {
         </div>
       </div>
 
-      {/* Order Tabs */}
-      <div className="mb-4">
+         {/* Order Tabs */}
+         <div className="mb-4">
         <ul className="nav nav-tabs">
-          <li className="nav-item">
-            <a className="nav-link active" href="#!">
-              All Orders
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="#!">
-              Received
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="#!">
-              Shipping
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="#!">
-              Complaint
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="#!">
-              Canceled
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link" href="#!">
-              Done
-            </a>
-          </li>
+          {['All Orders', 'Received', 'Shipping', 'Complaint', 'Canceled', 'Done'].map((filter) => (
+            <li className="nav-item" key={filter}>
+              <button
+                className={`nav-link ${activeFilter === filter ? 'active' : ''}`}
+                onClick={() => handleFilterChange(filter)}
+              >
+                {filter}
+              </button>
+            </li>
+          ))}
         </ul>
       </div>
 
-      {/* Orders Table */}
       <div className="table-responsive">
         <table className="table table-striped">
           <thead>
@@ -111,57 +159,39 @@ const OrderSummary = () => {
               <th className="py-3 px-4">Order Date</th>
               <th className="py-3 px-4">Total Amount</th>
               <th className="py-3 px-4">Status</th>
+              <th className="py-3 px-4">Action</th>
             </tr>
           </thead>
           <tbody>
             {currentOrders.length > 0 ? (
               currentOrders.map((order, index) => (
-                <React.Fragment key={order.oid}>
-                  <tr onClick={() => toggleOrderItems(order.oid)}>
-                    <td className="py-3 px-4">{index + 1 + indexOfFirstOrder}</td>
-                    <td className="py-3 px-4">{order.order_id}</td>
-                    <td className="py-3 px-4">{order.username}</td>
-                    <td className="py-3 px-4">{order.order_date}</td>
-                    <td className="py-3 px-4">{order.total_amount}</td>
-                    <td className="py-3 px-4">{order.status}</td>
-                  </tr>
-                  {expandedOrderId === order.oid && (
-                    <tr>
-                      <td colSpan="6">
-                        <div className="d-flex flex-wrap gap-3 p-3">
-                          {order.OrderItems.map((item, idx) => (
-                            <div
-                              key={idx}
-                              className="card"
-                              style={{ width: '150px' }}
-                            >
-                              <img
-                                src={`${baseurl}/${item.Product.images[0].image_path}`}
-                                className="card-img-top"
-                                alt={item.Product.product_name}
-                              />
-                              <div className="card-body">
-                                <h6 className="card-title">
-                                  {item.Product.product_name}
-                                </h6>
-                                <p className="card-text">
-                                  Quantity: {item.quantity}
-                                </p>
-                                <p className="card-text">
-                                  Price: {item.price}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                <tr key={order.oid}>
+                  <td className="py-3 px-4">{index + 1 + indexOfFirstOrder}</td>
+                  <td className="py-3 px-4">{order.order_id}</td>
+                  <td className="py-3 px-4">{order.user.username}</td>
+                  <td className="py-3 px-4">{order.order_date}</td>
+                  <td className="py-3 px-4">{order.total_amount}</td>
+                  <td className="py-3 px-4">
+                  <span style={statusStyles[order.status] || {}}>
+                        {order.status}
+                      </span>
                       </td>
-                    </tr>
-                  )}
-                </React.Fragment>
+                      <td className="py-3 px-4">
+                    {order.status === 'Received' && (
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleShipmentClick(order.oid)} // Pass oid
+                      >
+                        Create Shipments
+                      </button>
+                    )}
+                  </td>
+                 
+                </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center">
+                <td colSpan="7" className="text-center">
                   No orders found
                 </td>
               </tr>
@@ -170,7 +200,6 @@ const OrderSummary = () => {
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="d-flex justify-content-between align-items-center mt-3">
         <span>
           Showing {currentOrders.length} of {orders.length} entries
@@ -199,6 +228,13 @@ const OrderSummary = () => {
           </Pagination.Next>
         </Pagination>
       </div>
+
+      {showShipmentDetails && selectedOrderOid && (
+        <ShipmentsDetails
+          oid={selectedOrderOid} 
+          onClose={() => setShowShipmentDetails(false)}
+        />
+      )}
     </div>
   );
 };

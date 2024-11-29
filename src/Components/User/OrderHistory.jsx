@@ -13,12 +13,17 @@ const OrderHistory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const LoggedUser = JSON.parse(localStorage.getItem("userData"));
-
   useEffect(() => {
+    const LoggedUser = JSON.parse(localStorage.getItem("userData"));
     if (!LoggedUser) {
-      navigate("/Auth/Login");
+      navigate("/");
+    } else if (LoggedUser.role === "admin") {
+      navigate("/AdminDashboard/EnterpriseAi");
     }
-  }, [LoggedUser, navigate]);
+    else if(LoggedUser.role === "technician"){
+      navigate('/User/StoreDetails');
+    }
+  }, [navigate]); // Removed LoggedUser from dependency array
 
   useEffect(() => {
     const fetchOrders = async () => {

@@ -58,6 +58,7 @@ const Distributors = () => {
         contact_person_name: currentDistributor?.contact_person_name || "",
         phoneno: currentDistributor?.phoneno || "",
         email: currentDistributor?.email || "",
+        password: currentDistributor?.password || ""
       };
 
       // Add distributor data as a JSON string
@@ -421,6 +422,17 @@ const Distributors = () => {
                         placeholder="Enter email"
                         onChange={handleInputChange}
                         value={currentDistributor?.email || ""}
+                      />
+                    </div>
+                    <div className="col-12">
+                      <label className="form-label">Password</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        name="password"
+                        placeholder="Enter password"
+                        onChange={handleInputChange}
+                        value={currentDistributor?.password || ""}
                       />
                     </div>
 

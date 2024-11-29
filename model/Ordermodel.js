@@ -1,6 +1,7 @@
 const { Sequelize } = require('sequelize');
 const db = require('../config/db');
 const { DataTypes } = Sequelize;
+const User = require('./UserModel');
 
 const Order = db.define('orders', {
     oid: {
@@ -16,6 +17,10 @@ const Order = db.define('orders', {
     user_id : {
         type: DataTypes.INTEGER,
         allowNull: false,
+        references: {
+            model: User, 
+            key: 'uid'
+        }
     },
     order_date: {
         type: DataTypes.STRING,
@@ -26,12 +31,17 @@ const Order = db.define('orders', {
         allowNull: false,
     },
     status: {
-        type: DataTypes.STRING,
+        type: DataTypes.ENUM('Received', 'Shipping', 'Done', 'Cancelled', 'Complaint'), // Consider using ENUM for predefined statuses
         allowNull: false,
+        defaultValue: 'Received'
     }
 }, {
     tableName: 'orders',
     timestamps: true, 
 });
 
+Order.belongsTo(User, {
+    foreignKey: 'user_id',
+    as: 'user'
+});
 module.exports = Order;

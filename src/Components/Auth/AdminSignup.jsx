@@ -7,65 +7,179 @@ import baseurl from '../ApiService/ApiService';
 
 const AdminSignup = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+
+  const [errors, setErrors] = useState({
+    email: '',
+    password: ''
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState(null);
+
+  // Validation patterns
+  const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+  const validateField = (name, value) => {
+    let error = '';
+
+    switch (name) {
+      case 'email':
+        if (!value) {
+          error = 'Email is required';
+        } else if (!emailPattern.test(value)) {
+          error = 'Please enter a valid email address';
+        }
+        break;
+
+      case 'password':
+        if (!value) {
+          error = 'Password is required';
+        } else if (!passwordPattern.test(value)) {
+          error = 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character';
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    return error;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+
+    // Clear API error when user starts typing
+    setApiError(null);
+
+    // Validate field and update errors
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    let isValid = true;
+
+    // Validate all fields
+    Object.keys(formData).forEach(key => {
+      const error = validateField(key, formData[key]);
+      newErrors[key] = error;
+      if (error) {
+        isValid = false;
+      }
+    });
+
+    setErrors(newErrors);
+    return isValid;
+  };
 
   const handleAdminSignup = async (e) => {
     e.preventDefault();
     
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setApiError(null);
+
     try {
       const response = await axios.post(`${baseurl}/api/admin`, {
-        email,
-        password
+        email: formData.email,
+        password: formData.password
       });
       
       if (response.status === 201) {
-        setError(null);
-        navigate('/Auth/login'); // Redirect to login after successful registration
-        alert(response.data.message);
-      } else {
-        setError('Registration failed');
+        navigate('/Auth/login');
+        alert('Registration successful! Please log in.');
       }
     } catch (error) {
-      if (error.response && error.response.data && error.response.data.message) {
-        setError(error.response.data.message);
-      } else {
-        setError('Registration failed');
-      }
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      setApiError(errorMessage);
       console.error('Registration error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '10px',
+    marginTop: '5px',
+    marginBottom: '5px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+  };
+
+  const errorStyle = {
+    color: '#dc3545',
+    fontSize: '0.875rem',
+    marginTop: '0.25rem',
+    marginBottom: '0.5rem',
   };
 
   return (
     <div className="login-container adminsignup-container">
       <div className="login-form adminsignup-form">
         <h3>Admin Registration</h3>
-        <form onSubmit={handleAdminSignup}>
+        <form onSubmit={handleAdminSignup} noValidate>
           <div className="form-group">
-            <label>Email</label>
+            <label>Email*</label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              style={{
+                ...inputStyle,
+                borderColor: errors.email ? '#dc3545' : '#ddd'
+              }}
               required
             />
+            {errors.email && <div style={errorStyle}>{errors.email}</div>}
           </div>
+
           <div className="form-group">
-            <label>Password</label>
+            <label>Password*</label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              style={{
+                ...inputStyle,
+                borderColor: errors.password ? '#dc3545' : '#ddd'
+              }}
               required
             />
+            {errors.password && <div style={errorStyle}>{errors.password}</div>}
           </div>
-          {error && <p className="error-message">{error}</p>}
+
+          {apiError && <p className="error-message">{apiError}</p>}
           
-          <button className="login-button adminsignup-button" type="submit">
-            Register
+          <button 
+            className="login-button adminsignup-button" 
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Registering...' : 'Register'}
           </button>
         </form>
+
         <p className="signup-link">
           <a href="/Auth/login">Back to Login</a>
         </p>

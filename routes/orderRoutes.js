@@ -13,4 +13,6 @@ router.get('/orders', OrderController.getAllOrders);
 // Route to get orders by user ID
 router.get('/userOrdersById/:id', OrderController.getOrdersByUserId);
 
+router.get('/order/:id', OrderController.getOrderById);
+
 module.exports = router;

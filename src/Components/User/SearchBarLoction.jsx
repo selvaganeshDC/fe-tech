@@ -7,7 +7,7 @@ const SearchBarLocation = () => {
     <div className="searchBarLocation container mt-5">
       <div className="row align-items-center justify-content-center">
         {/* Forum Button */}
-        <div className="col-12 col-md-auto mb-3 mb-md-0">
+        <div className="col-12 col-md-auto mb-3 mb-md-0 forum-div">
           <button
             className="btn text-white px-4 d-flex align-items-center justify-content-center w-100 forum-button"
             style={{
@@ -23,7 +23,7 @@ const SearchBarLocation = () => {
         </div>
 
         {/* Search Input and Location Links */}
-        <div className="col-12 col-md">
+        <div className="col-12 col-md location_searchbar">
           <div
             className="border d-flex align-items-center px-3 flex-nowrap" // Add flex-nowrap to prevent wrapping
             style={{

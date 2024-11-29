@@ -2,10 +2,9 @@ require('dotenv').config();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
-const User = require('../model/Usermodel');
+const User = require('../model/UserModel');
 const Admin = require('../model/AdminModel');
 const { where } = require('sequelize');
-
 // Register User
 exports.registerUser = async (req, res) => {
     const errors = validationResult(req);
@@ -15,18 +14,20 @@ exports.registerUser = async (req, res) => {
 
     const { username, email, password, confirm_password } = req.body;
 
+    if (password !== confirm_password) {
+        return res.status(400).json({ message: 'Passwords do not match' });
+    }
+
     try {
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
             return res.status(400).json({ message: 'User with this useremail already exists' });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const hashedConfirmPassword = await bcrypt.hash(confirm_password, 10);
         const newUser = await User.create({ 
             username, 
             email, 
-            password: hashedPassword,
-            confirm_password : hashedConfirmPassword
+            password: hashedPassword
         });
 
         res.status(201).json({
@@ -74,22 +75,22 @@ exports.loginUser = async (req, res) => {
     try {
         // Find user or admin by email
         const user = await User.findOne({ where: { email } });
-        const admin = await Admin.findOne({ where: { email } });
+        const admin = await Admin.findOne({ where: { email } });;
 
         if (!user && !admin) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
         let role;
-        let entity; // Holds the logged-in entity (user or admin)
+        let entity; 
         let isMatch = false;
 
         if (user) {
-            role = 'user';
+            role = user.role;
             isMatch = await bcrypt.compare(password, user.password);
             entity = user;
         } else if (admin) {
-            role = 'admin';
+            role = admin.role;
             isMatch = await bcrypt.compare(password, admin.password);
             entity = admin;
         }
@@ -107,11 +108,13 @@ exports.loginUser = async (req, res) => {
             process.env.ACCESS_SECRET_TOKEN,
             { expiresIn: '2h' }
         );
+        const userData = { ...entity.get() };
+            delete userData.password;
 
         res.status(200).json({
             message: 'Login successful',
             role,
-            data: entity,
+            data: userData,
             token,
         });
     } catch (error) {

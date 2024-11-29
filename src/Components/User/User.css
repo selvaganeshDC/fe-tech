@@ -146,7 +146,17 @@
 
   @media (max-width: 768px)
   {
-    .searchBarLocation, .searchBarLocationBorder {
+    .forum-button{
+      width: 50% !important;
+      margin-bottom: 0 !important;
+    }
+    .forum-div{
+      width: 100% !important;
+      display: flex !important;
+      justify-content: center;
+      align-items: center;
+    }
+    .location_searchbar {
         display: none !important;
     }
     .add-post-button{

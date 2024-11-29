@@ -14,10 +14,15 @@ const Cart = () => {
 
   // Redirect non-users to login
   useEffect(() => {
-    if (!LoggedUser || LoggedUser.role !== "user") {
-      navigate("/Auth/login");
+    if (!LoggedUser) {
+      navigate("/");
+    } else if (LoggedUser.role === "admin") {
+      navigate("/AdminDashboard/EnterpriseAi");
     }
-  }, [LoggedUser, navigate]);
+    else if(LoggedUser.role === "technician"){
+      navigate('/User/StoreDetails');
+    }
+  }, [navigate]);
 
   // Fetch cart items for the user
   useEffect(() => {

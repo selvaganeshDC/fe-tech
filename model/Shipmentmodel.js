@@ -1,7 +1,7 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const sequelize = require('../config/db'); 
-const Order = require('./Ordermodel');
-const Product = require('./Productmodel');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db'); // Adjust the path to your database connection
+const Order = require('./Ordermodel'); // Import Order model for association
+const Product = require('./Productmodel'); // Import Product model for association
 
 const Shipment = sequelize.define('Shipment', {
     sid: {
@@ -23,55 +23,81 @@ const Shipment = sequelize.define('Shipment', {
             key: 'order_id'
         }
     },
-    product_id: { 
-        type: DataTypes.STRING,
-        allowNull: false,
-        references: {
-            model: Product,
-            key: 'product_id'
-        }
-    },
     distributor_name: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: false
     },
-    product_name: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    quantity: {
+    total_quantity: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        validate: {
-            min: 1
-        }
+        defaultValue: 0
     },
-    price: {
-        type: DataTypes.FLOAT,
+    total_price: {
+        type: DataTypes.DECIMAL,
         allowNull: false,
-        validate: {
-            min: 0
-        }
+        defaultValue: 0
     },
     dispatch_date: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: false
     },
     dispatch_address: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: false
     },
     transport: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    shipment_items: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+        get() {
+            const rawValue = this.getDataValue('shipment_items');
+            try {
+                return rawValue ? JSON.parse(rawValue) : [];
+            } catch (error) {
+                console.error('Error parsing shipment items:', error);
+                return [];
+            }
+        },
+        set(value) {
+            this.setDataValue('shipment_items', JSON.stringify(value));
+        }
+    },
+    status: {
+        type: DataTypes.ENUM('Shipment', 'Delivered', 'Cancelled'),
+        defaultValue: 'Shipment'
     }
 }, {
     tableName: 'shipments',
-    timestamps: true,  
+    timestamps: true, 
+    indexes: [
+        {
+            unique: true,
+            fields: ['shipment_id']
+        },
+        {
+            fields: ['order_id']
+        }
+    ]
 });
 
 // Define associations
-Shipment.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
-Shipment.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+Shipment.belongsTo(Order, {
+    foreignKey: 'order_id',
+    onDelete: 'CASCADE'
+});
+
+// Method to validate shipment items
+Shipment.prototype.validateShipmentItems = function() {
+    const items = this.shipment_items;
+    return items.every(item => 
+        item.product_id && 
+        item.product_name && 
+        item.quantity > 0 && 
+        item.price >= 0
+    );
+};
 
 module.exports = Shipment;
