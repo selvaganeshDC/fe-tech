@@ -1,27 +1,85 @@
 const Distributor = require('../model/Distributorsmodel');
+const User = require('../model/UserModel');
 const DistributorImage = require('../model/DistributorImagesmodel');
 const { Op } = require('sequelize');
+const bcrypt = require('bcrypt');
 
-
-// Add a new distributor with an image
 exports.addDistributor = async (req, res) => {
-        try {
-            // Create the distributor
-            const distributor = await Distributor.create(req.body);
 
-            if (req.files && req.files.length > 0) {
-                const imageEntries = req.files.map((file) => ({
-                    distributor_id: distributor.did,
-                    image_path: file.path,
-                }));
+    const { 
+        companyname, 
+        location, 
+        gstnumber, 
+        creditlimit, 
+        contact_person_name, 
+        phoneno, 
+        email, 
+        password 
+    } = req.body;
 
-                await DistributorImage.bulkCreate(imageEntries);
-            }
-
-            res.status(201).json({ message: 'Distributor added successfully', distributor });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
+    try {
+        // Check if a distributor with this email or GST number already exists
+        const existingDistributor = await Distributor.findOne({ 
+            where: { 
+                [Op.or]: [
+                    { email: email },
+                    { gstnumber: gstnumber }
+                ]
+            } 
+        });
+        if (existingDistributor) {
+            return res.status(400).json({ 
+                message: 'Distributor with this email or GST number already exists' 
+            });
         }
+        const existingUser = await User.findOne({where: {email}});
+        if (existingUser) {
+            return res.status(400).json({
+                message: 'User with this email already exists'
+            });
+        }
+
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create the distributor
+        const distributor = await Distributor.create({
+            companyname,
+            location,
+            gstnumber,
+            creditlimit,
+            contact_person_name,
+            phoneno,
+            email
+        });
+        const user = await User.create({
+            username: contact_person_name,
+            email,
+            password: hashedPassword,
+            role: 'distributor'
+        }); 
+
+        // Handle image uploads
+        if (req.files && req.files.length > 0) {
+            const imageEntries = req.files.map((file) => ({
+                distributor_id: distributor.did,
+                image_path: file.path,
+            }));
+
+            await DistributorImage.bulkCreate(imageEntries);
+        }
+
+        res.status(201).json({ 
+            message: 'Distributor added successfully', 
+            distributor: distributor
+        });
+    } catch (error) {
+        console.error('Distributor registration error:', error);
+        res.status(500).json({ 
+            message: 'Server error', 
+            error: error.message 
+        });
+    }
 };
 
 // Get all distributors

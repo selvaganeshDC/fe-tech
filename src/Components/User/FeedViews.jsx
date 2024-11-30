@@ -9,10 +9,10 @@ const FeedViews = () => {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState("");
   const [selectedProductImage, setSelectedProductImage] = useState("");
+  const user = JSON.parse(localStorage.getItem('userData'));
   const [formData, setFormData] = useState({
     quantity: "",
-    distributor_name: "",
-    location: "",
+    name: "",
     phone_number: "",
   });
   const [forums, setForums] = useState([]);
@@ -59,16 +59,16 @@ const FeedViews = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!selectedProduct || !formData.quantity || !formData.distributor_name || !formData.phone_number) {
+    if (!selectedProduct || !formData.quantity || !formData.name || !formData.phone_number) {
       alert("Please fill in all required fields.");
       return;
     }
 
     const submissionData = {
+      user_id: user.uid,
       product_name: selectedProduct,
       quantity: formData.quantity,
-      distributor_name: formData.distributor_name,
-      location: formData.location,
+      name: formData.name,
       phone_number: formData.phone_number,
     };
 
@@ -78,8 +78,7 @@ const FeedViews = () => {
         alert("Requirement submitted successfully!");
         setFormData({
           quantity: "",
-          distributor_name: "",
-          location: "",
+          name: "",
           phone_number: "",
         });
         fetchProducts();
@@ -105,6 +104,35 @@ const FeedViews = () => {
     );
     if (selectedProduct) {
       setSelectedProductImage(selectedProduct.image_path);
+    }
+  };
+  const handleTakeForum = async (forumId) => {
+    // Check if user and user.uid exist
+    if (!user || !user.uid) {
+      alert('Please log in to take this forum listing');
+      return;
+    }
+  
+    try {
+      const response = await axios.post(`${baseurl}/api/forumtake/${forumId}`, {
+        distributor_id: user.uid
+      });
+      alert(response.data.message);
+      
+      fetchForums();
+    } catch (error) {
+      // More detailed error handling
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        alert(error.response.data.message || 'Failed to take forum listing');
+      } else if (error.request) {
+        // The request was made but no response was received
+        alert('No response received from server');
+      } else {
+        // Something happened in setting up the request
+        alert('Error processing your request');
+      }
+      console.error('Forum take error:', error);
     }
   };
 
@@ -171,19 +199,28 @@ const FeedViews = () => {
                       </p>
                       <p className="d-flex justify-content-between">
                         <span className="fw-bold">Post by: </span>
-                        <span>{forum.distributor_name || "Unknown"}</span>
+                        <span>{forum.name || "Unknown"}</span>
                       </p>
-                      <p className="d-flex justify-content-between">
+                      {/* <p className="d-flex justify-content-between">
                         <span className="fw-bold">Distributor Location: </span>
                         <span>{forum.location || "Not Provided"}</span>
-                      </p>
+                      </p> */}
                       <p className="d-flex justify-content-between">
                         <span className="fw-bold">Close Date: </span>
                         <span>{forum.close_date || "No Date"}</span>
                       </p>
                         
-                        <div className="w-100 d-flex justify-content-end"><button className="btn w-25 " style={{background: '#F24E1E', color: 'white'}}>Take</button>
-                      </div>
+                      {user && user.role === 'distributor' && (
+                  <div className="w-100 d-flex justify-content-end">
+                    <button 
+                      className="btn w-25" 
+                      style={{background: '#F24E1E', color: 'white'}}
+                      onClick={() => handleTakeForum(forum.fid)}
+                    >
+                      Take
+                    </button>
+                  </div>
+                )}
                     </div>
                   </div>
                 </div>
@@ -234,24 +271,13 @@ const FeedViews = () => {
                 />
               </div>
               <div className="mb-3">
-                <label>Distributor Name</label>
+                <label>Name</label>
                 <input
                   type="text"
-                  name="distributor_name"
+                  name="name"
                   className="form-control"
                   placeholder="Enter Your Name"
-                  value={formData.distributor_name}
-                  onChange={handleInputChange}
-                />
-              </div>
-              <div className="mb-3">
-                <label>Distributor Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  className="form-control"
-                  placeholder="Enter Location"
-                  value={formData.location}
+                  value={formData.name}
                   onChange={handleInputChange}
                 />
               </div>

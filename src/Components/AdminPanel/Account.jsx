@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import userLogo from "../User/Assets/user-logo.png";
 import './AdminPanel.css';
 
@@ -10,6 +10,9 @@ const EditProfile = () => {
     aboutStore: '',
     storeAddress: ''
   });
+  
+  const [profileImage, setProfileImage] = useState(userLogo);
+  const fileInputRef = useRef(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -19,9 +22,35 @@ const EditProfile = () => {
     }));
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImage(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleRemoveImage = () => {
+    setProfileImage(userLogo);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    // Here you would typically send the data to your backend
+    console.log('Form submitted:', {
+      ...formData,
+      profileImage
+    });
   };
 
   return (
@@ -32,13 +61,34 @@ const EditProfile = () => {
 
       <div className="image-section d-flex align-items-center gap-3 mb-4">
         <img 
-          src={userLogo}
+          src={profileImage}
           alt="Profile" 
           className="profile-image"
         />
         <div className="profile-actions d-flex gap-2">
-          <button className="btn edit-btn">Edit Profile</button>
-          <button className="btn remove-btn">Remove</button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            className="d-none"
+          />
+          <button 
+            type="button"
+            className="btn"
+            style={{color: 'black', border: '1px solid black'}}
+            onClick={handleUploadClick}
+          >
+            Edit profile
+          </button>
+          <button 
+            type="button"
+            className="btn"
+            style={{color: 'red'}}
+            onClick={handleRemoveImage}
+          >
+            Remove
+          </button>
         </div>
       </div>
 
@@ -97,6 +147,10 @@ const EditProfile = () => {
             className="form-control custom-input"
           />
         </div>
+
+        <button type="submit" className="btn btn-success mt-3">
+          Update Profile
+        </button>
       </form>
     </div>
   );

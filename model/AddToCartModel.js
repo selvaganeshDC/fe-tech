@@ -2,7 +2,7 @@
 const { Sequelize } = require('sequelize');
 const {DataTypes} = Sequelize;
 const sequelize = require('../config/db');
-const User = require('./Usermodel');
+const User = require('./UserModel');
 const Products = require('./Productmodel');
 
 const AddToCart = sequelize.define('AddToCart', {

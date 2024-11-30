@@ -11,6 +11,8 @@ import Technicians from "./Technicians";
 import OrderSummary from "./OrderSummary";
 import Distributors from "./Distributors";
 import Shipments from "./Shipments"
+import ShipmentsDetails from "./ShipmentsDetails";
+import ShipmentConfirmForm from "./ShipmentConfirmForm";
 import DistributorsViewDetails from "./DistributorsViewDetails";
 import ExpertiseAiHub from './EnterpriseAi';
 import Transport from "./Transport";
@@ -20,7 +22,6 @@ import './AdminPanel.css'
 
 const AdminDashboard = () => {
     const [screenWidth, setScreenWidth] = useState(window.innerWidth);
-
 
   const navigate = useNavigate();
   const LoggedUser = JSON.parse(localStorage.getItem("userData"));
@@ -74,6 +75,8 @@ const AdminDashboard = () => {
                 <Route path="Transport" element={<Transport />} />
                 <Route path="OrderSummary" element={<OrderSummary />} />
                 <Route path="Shipments" element={<Shipments />} />
+                <Route path="Shipments/:id" element={<ShipmentsDetails />} />
+                <Route path="ShipmentConfirmForm/:id" element={<ShipmentConfirmForm />} />
                 <Route path="Account" element={<Account />} />
                 <Route path="Settings" element={<Settings />} />
               </Routes>

@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import "./AdminPanel.css";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { CircleUserRound, Settings, LogOut } from "lucide-react";
+import { useState as useStateHook, useEffect } from "react";
+import { CircleUserRound, Settings, LogOut, ChevronDown, ChevronUp } from "lucide-react";
 import Logo from "../User/Assets/RimLogo.png";
 import Enterprise from "../User/Assets/Enterprise ai.png";
 import Forum from "../User/Assets/forum.png";
@@ -16,9 +16,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 const AdminSideBar = ({ handleBackClick }) => {
-  const navigate = useNavigate(); // Add this hook
+  const navigate = useNavigate();
   const location = useLocation();
   const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth > 768);
+  const [isProductsOpen, setIsProductsOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -35,17 +36,15 @@ const AdminSideBar = ({ handleBackClick }) => {
     e.preventDefault();
     navigate(path);
   };
+
   const handleLogout = () => {
     localStorage.removeItem('userData');
     window.location.href = '/Auth/Login';
   };
 
-  // const handleLogout = () => {
-  //   // Your logout logic here, e.g., clearing user data, making an API call to log out, etc.
-  //   console.log('Logged out');
-  //   // After logout logic, you can redirect to a login page, or reset the app state.
-  //   window.location.href = '/login'; // Example redirect
-  // };
+  const toggleProductsDropdown = () => {
+    setIsProductsOpen(!isProductsOpen);
+  };
 
   return (
     <>
@@ -63,14 +62,6 @@ const AdminSideBar = ({ handleBackClick }) => {
 
         {/* Navigation Links */}
         <div className="sideNavLinks px-3">
-          {/* Back Button */}
-          {/* <div
-            // className="back-link mb-3 d-none d-md-block"
-            onClick={handleBackClick}
-          >
-            <i className="bi bi-arrow-left-short fs-4 cursor-pointer"></i> Back
-          </div> */}
-
           {/* General Links */}
           <div className="general text-muted mt-4 fw-bold">General</div>
           <ul className="list-unstyled generalLinks mt-2 ps-2">
@@ -94,38 +85,42 @@ const AdminSideBar = ({ handleBackClick }) => {
               </a>
             </li>
             <li className="mb-2">
-              <div className="dropdown">
-                <a
-                  className="dropdown-toggle d-flex align-items-center py-2 text-dark text-decoration-none"
-                  href="#"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  <img src={Product} alt="" className="me-3" /> Products
-                </a>
-                <ul className="dropdown-menu">
-                  <li>
+              <div 
+                className="d-flex align-items-center justify-content-between py-2 text-dark text-decoration-none cursor-pointer"
+                onClick={toggleProductsDropdown}
+              >
+                <div className="d-flex align-items-center">
+                  <img src={Product} alt="" className="me-3" /> 
+                  Products
+                </div>
+                {isProductsOpen ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
+              </div>
+              {isProductsOpen && (
+                <ul className="list-unstyled pl-4">
+                  <li className="mb-4 mt-3 ms-5">
                     <a
-                      className="dropdown-item"
                       href="/AdminDashboard/products"
                       onClick={(e) => handleNavigation('/AdminDashboard/products', e)}
+                      className="text-dark text-decoration-none"
                     >
                       Product List
                     </a>
                   </li>
-                  <li>
+                  <li className="mb-3 ms-5">
                     <a
-                      className="dropdown-item"
                       href="/AdminDashboard/productView"
                       onClick={(e) => handleNavigation('/AdminDashboard/productView', e)}
+                      className="text-dark text-decoration-none"
                     >
                       Product View
                     </a>
                   </li>
                 </ul>
-              </div>
-
+              )}
             </li>
             <li className="mb-2">
               <a
@@ -191,6 +186,7 @@ const AdminSideBar = ({ handleBackClick }) => {
               <a
                 href="/AdminDashboard/Account"
                 className="d-flex align-items-center py-2 text-dark text-decoration-none"
+                onClick={(event) => handleNavigation('/AdminDashboard/Account', event)}
               >
                 <CircleUserRound className="me-3" /> Accounts
               </a>
@@ -199,157 +195,169 @@ const AdminSideBar = ({ handleBackClick }) => {
               <a
                 href="/AdminDashboard/Settings"
                 className="d-flex align-items-center py-2 text-dark text-decoration-none"
+                onClick={(event) => handleNavigation('/AdminDashboard/Settings', event)}
               >
                 <Settings className="me-3" /> Settings
               </a>
             </li>
             <li className="mb-2">
-            <button
-                type="button"
-                className="btn btn-danger"
-                onClick={handleLogout}
-                data-bs-dismiss="modal"
-              >
-                Logout
-              </button>
-              {/* <a
+              <a
                 href=""
                 className="d-flex align-items-center py-2 text-dark text-decoration-none"
-                onClick={handleLogout}
+                data-bs-toggle="modal"
+                data-bs-target="#logoutModal"
               >
                 <LogOut className="me-3" /> Logout
-              </a> */}
+              </a>
             </li>
           </ul>
         </div>
       </div>
       ) : (
       <div className="" style={{ width: '100%' }}>
-  {/* Logo Section */}
-  {/* Navigation Section */}
-  <div className="p-3">
-    {/* General Links */}
-    <div className="text-white small fw-bold mb-3">General</div>
-    <nav className="nav flex-column">
-      <a
-        href="#"
-        onClick={(event) => handleNavigation('/AdminDashboard/EnterpriseAi', event)}
-        className="nav-link text-white d-flex align-items-center mb-2 "
-        data-bs-dismiss="offcanvas"
-      >
-        <i className="bi bi-box me-3 text-white"></i> Enterprise AI Hub
-      </a>
-
-      <a
-        href="#"
-        onClick={(event) => handleNavigation('/AdminDashboard/forum', event)}
-        className="nav-link text-white d-flex align-items-center mb-2"
-        data-bs-dismiss="offcanvas"
-      >
-        <i className="bi bi-chat-square-text me-3 text-white"></i> Forum
-      </a>
-
-      {/* Products Dropdown */}
-      <div className="dropdown">
-        <button
-          className="nav-link text-white d-flex align-items-center mb-2 border-0 bg-transparent w-100"
-          data-bs-toggle="dropdown"
-        >
-          <i className="bi bi-box-seam me-3 text-white"></i> Products
-        </button>
-        <ul className="dropdown-menu">
-          <li>
+        {/* Small Screen Navigation */}
+        <div className="p-3">
+          {/* General Links */}
+          <div className="text-white small fw-bold mb-3">General</div>
+          <nav className="nav flex-column">
             <a
-              className="dropdown-item"
               href="#"
+              onClick={(event) => handleNavigation('/AdminDashboard/EnterpriseAi', event)}
+              className="nav-link text-white d-flex align-items-center mb-2"
               data-bs-dismiss="offcanvas"
-              onClick={(event) => handleNavigation('/AdminDashboard/products', event)}
             >
-              Product List
+              <i className="bi bi-box me-3 text-white"></i> Enterprise AI Hub
             </a>
-          </li>
-          <li>
+
             <a
-              className="dropdown-item"
               href="#"
+              onClick={(event) => handleNavigation('/AdminDashboard/forum', event)}
+              className="nav-link text-white d-flex align-items-center mb-2"
               data-bs-dismiss="offcanvas"
-              onClick={(event) => handleNavigation('/AdminDashboard/productView', event)}
             >
-              Product View
+              <i className="bi bi-chat-square-text me-3 text-white"></i> Forum
             </a>
-          </li>
-        </ul>
-      </div>
 
-      <a
-        href="#"
-        onClick={(event) => handleNavigation('/AdminDashboard/technicians', event)}
-        className="nav-link text-white d-flex align-items-center mb-2"
-        data-bs-dismiss="offcanvas"
-      >
-        <i className="bi bi-people me-3 text-white"></i> Technicians
-      </a>
+            {/* Products Dropdown */}
+            <div className="dropdown">
+              <div
+                className="nav-link text-white d-flex align-items-center mb-2 border-0 bg-transparent w-100 justify-content-between"
+                onClick={toggleProductsDropdown}
+              >
+                <div className="d-flex align-items-center">
+                  <i className="bi bi-box-seam me-3 text-white"></i> Products
+                </div>
+                {isProductsOpen ? (
+                  <ChevronUp color="white" size={16} />
+                ) : (
+                  <ChevronDown color="white" size={16} />
+                )}
+              </div>
+              {isProductsOpen && (
+                <ul className="list-unstyled pl-4 ms-5">
+                  <li className="mb-4">
+                    <a
+                      className="text-white text-decoration-none"
+                      href="#"
+                      data-bs-dismiss="offcanvas"
+                      onClick={(event) => handleNavigation('/AdminDashboard/products', event)}
+                    >
+                      Product List
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      className="text-white text-decoration-none"
+                      href="#"
+                      data-bs-dismiss="offcanvas"
+                      onClick={(event) => handleNavigation('/AdminDashboard/productView', event)}
+                    >
+                      Product View
+                    </a>
+                  </li>
+                </ul>
+              )}
+            </div>
 
-      <a
-        href="#"
-        onClick={(event) => handleNavigation('/AdminDashboard/Distributors', event)}
-        className="nav-link text-white d-flex align-items-center mb-2"
-        data-bs-dismiss="offcanvas"
-      >
-        <i className="bi bi-people me-3 text-white"></i> Distributors
-      </a>
+            <a
+              href="#"
+              onClick={(event) => handleNavigation('/AdminDashboard/technicians', event)}
+              className="nav-link text-white d-flex align-items-center mb-2"
+              data-bs-dismiss="offcanvas"
+            >
+              <i className="bi bi-people me-3 text-white"></i> Technicians
+            </a>
 
-      <a
-        href="#"
-        onClick={(event) => handleNavigation('/AdminDashboard/Shipments', event)}
-        className="nav-link text-white d-flex align-items-center mb-2"
-        data-bs-dismiss="offcanvas"
-      >
-        <i className="bi bi-truck me-3 text-white"></i> Shipments
-      </a>
+            <a
+              href="#"
+              onClick={(event) => handleNavigation('/AdminDashboard/Distributors', event)}
+              className="nav-link text-white d-flex align-items-center mb-2"
+              data-bs-dismiss="offcanvas"
+            >
+              <i className="bi bi-people me-3 text-white"></i> Distributors
+            </a>
 
-      <a
-        href="#"
-        onClick={(event) => handleNavigation('/AdminDashboard/Transport', event)}
-        className="nav-link text-white d-flex align-items-center mb-2"
-        data-bs-dismiss="offcanvas"
-      >
-        <i className="bi bi-truck me-3 text-white"></i> Transport
-      </a>
+            <a
+              href="#"
+              onClick={(event) => handleNavigation('/AdminDashboard/Shipments', event)}
+              className="nav-link text-white d-flex align-items-center mb-2"
+              data-bs-dismiss="offcanvas"
+            >
+              <i className="bi bi-truck me-3 text-white"></i> Shipments
+            </a>
 
-      <a
-        href=""
-        onClick={(event) => handleNavigation('/AdminDashboard/OrderSummary', event)}
-        className="nav-link text-white d-flex align-items-center mb-2"
-        data-bs-dismiss="offcanvas"
-      >
-        <i className="bi bi-cart me-3 text-white"></i> Order Summary
-      </a>
-    </nav>
+            <a
+              href="#"
+              onClick={(event) => handleNavigation('/AdminDashboard/Transport', event)}
+              className="nav-link text-white d-flex align-items-center mb-2"
+              data-bs-dismiss="offcanvas"
+            >
+              <i className="bi bi-truck me-3 text-white"></i> Transport
+            </a>
 
-    {/* Support Links */}
-    <div className="text-white small fw-bold mt-4 mb-3">Support</div>
-    <nav className="nav flex-column">
-      <a href="" className="nav-link text-white d-flex align-items-center mb-2"
-      data-bs-dismiss="offcanvas" onClick={(event) => handleNavigation('/AdminDashboard/Account', event)}
-      >
-        <i className="bi bi-person-circle me-3 text-white"></i> Accounts
-      </a>
+            <a
+              href=""
+              onClick={(event) => handleNavigation('/AdminDashboard/OrderSummary', event)}
+              className="nav-link text-white d-flex align-items-center mb-2"
+              data-bs-dismiss="offcanvas"
+            >
+              <i className="bi bi-cart me-3 text-white"></i> Order Summary
+            </a>
+          </nav>
 
-      <a href="AdminDashboard/Settings" className="nav-link text-white d-flex align-items-center mb-2"
-      data-bs-dismiss="offcanvas"  onClick={(event) => handleNavigation('/AdminDashboard/Settings', event)}>
-        <i className="bi bi-gear me-3 text-white"></i> Settings
-      </a>
+          {/* Support Links */}
+          <div className="text-white small fw-bold mt-4 mb-3">Support</div>
+          <nav className="nav flex-column">
+            <a 
+              href="" 
+              className="nav-link text-white d-flex align-items-center mb-2"
+              data-bs-dismiss="offcanvas" 
+              onClick={(event) => handleNavigation('/AdminDashboard/Account', event)}
+            >
+              <i className="bi bi-person-circle me-3 text-white"></i> Accounts
+            </a>
 
-      <a href="" className="nav-link text-white d-flex align-items-center mb-2"
-      data-bs-dismiss="offcanvas" onClick={handleLogout}>
-        <i className="bi bi-box-arrow-right me-3 text-white"></i> Logout
-      </a>
-    </nav>
-  </div>
-</div>
-   )}
-   <div
+            <a 
+              href="AdminDashboard/Settings" 
+              className="nav-link text-white d-flex align-items-center mb-2"
+              data-bs-dismiss="offcanvas"  
+              onClick={(event) => handleNavigation('/AdminDashboard/Settings', event)}
+            >
+              <i className="bi bi-gear me-3 text-white"></i> Settings
+            </a>
+
+            <a 
+              href="" 
+              className="nav-link text-white d-flex align-items-center mb-2"
+              data-bs-dismiss="offcanvas" 
+              data-bs-toggle="modal"
+              data-bs-target="#logoutModal"
+            >
+              <i className="bi bi-box-arrow-right me-3 text-white"></i> Logout
+            </a>
+          </nav>
+        </div>
+        <div
         className="modal fade"
         id="logoutModal"
         tabIndex="-1"
@@ -392,6 +400,8 @@ const AdminSideBar = ({ handleBackClick }) => {
           </div>
         </div>
       </div>
+      </div>
+     )}
     </>
   );
 };

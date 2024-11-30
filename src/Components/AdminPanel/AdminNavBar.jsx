@@ -101,6 +101,8 @@ const AdminNavBar = () => {
       setTab("Products");
     } else if (location.pathname.startsWith("/AdminDashboard/Distributors")) {
       setTab("Distributors");
+    }else if (location.pathname.startsWith("/AdminDashboard/Shipments")) {
+      setTab("Shipments");
     } else {
       switch (location.pathname) {
         case "/AdminDashboard":
@@ -117,9 +119,6 @@ const AdminNavBar = () => {
             break;
         case "/AdminDashboard/Distributors":
           setTab("Distributors");
-          break;
-        case "/AdminDashboard/Shipments":
-          setTab("Shipments");
           break;
         case "/AdminDashboard/technicians":
           setTab("Technicians");

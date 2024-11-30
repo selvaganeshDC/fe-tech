@@ -9,4 +9,8 @@ router.post('/forum', forumValidationRules(), validateForum, ForumController.add
 // Route to view all forums
 router.get('/forums', ForumController.viewForums);
 
+router.post('/forumtake/:id', ForumController.takeForum);
+
+router.get('/forumtakens/:id', ForumController.showNotifyForDistributor);
+
 module.exports = router;

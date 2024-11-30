@@ -5,6 +5,7 @@ const Order = require('../model/Ordermodel');
 const OrderItem = require('../model/OrderItemModel'); // Assume this model stores individual order items
 const Product = require('../model/Productmodel');
 const ProductImage = require('../model/productImagesmodel');
+const User = require('../model/UserModel');
  
 exports.createOrder = async (req, res) => {
     try {
@@ -63,7 +64,12 @@ exports.createOrder = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
     try {
         const orders = await Order.findAll({
-            include: [{
+            include: [
+                {
+                    model: User, 
+                    as: 'user',
+                    attributes: ['username']
+                },{
                 model: OrderItem,
                 include: [{
                     model: Product,
@@ -77,7 +83,7 @@ exports.getAllOrders = async (req, res) => {
         });
  
         if (!orders || orders.length === 0) {
-            return res.status(404).json({
+            return res.json({
                 message: 'No orders found'
             });
         }
@@ -121,5 +127,33 @@ exports.getOrdersByUserId = async (req, res) => {
     } catch (error) {
         console.error('Error fetching orders by user ID:', error);
         res.status(500).json({ error: 'Failed to retrieve orders', details: error.message });
+    }
+};
+exports.getOrderById = async (req, res) => {
+    try {
+        const oid = req.params.id;
+        const order = await Order.findByPk(oid, {
+            include: [{
+                model: OrderItem,
+                include: [{
+                    model: Product
+                }]
+            }]
+        });
+ 
+        if (!order) {
+            return res.json({
+                message: 'Order not found',
+                data: null
+            });
+        }
+ 
+        res.status(200).json({
+            message: 'Order retrieved successfully',
+            data: order
+        });
+    } catch (error) {
+        console.error('Error fetching order by OID:', error);
+        res.status(500).json({ error: 'Failed to retrieve order', details: error.message });
     }
 };

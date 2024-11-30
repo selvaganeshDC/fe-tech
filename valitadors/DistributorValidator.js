@@ -20,6 +20,9 @@ const distributorValidationRules = () => {
     body('email')
       .notEmpty().withMessage('Email is required')
       .isEmail().withMessage('Email must be a valid email address.'),
+    body('password')
+      .notEmpty().withMessage('Password is required')
+      .isLength({ min: 6 }).withMessage('Password should be min 6 charactors.'),
     body('image')
       .custom((value, { req }) => !!req.files)
       .withMessage('Please upload an image file.')

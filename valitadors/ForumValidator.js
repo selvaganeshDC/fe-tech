@@ -7,10 +7,8 @@ const forumValidationRules = () => {
     body('quantity')
       .notEmpty().withMessage('Quantity is required.')
       .isInt({ min: 1 }).withMessage('Quantity must be a positive integer.'),
-    body('distributor_name')
-      .notEmpty().withMessage('Distributor name is required.'),
-    body('location')
-      .notEmpty().withMessage('Location is required.'),
+    body('name')
+      .notEmpty().withMessage('Name is required.'),
     body('phone_number')
       .notEmpty().withMessage('Phone number is required.')
       .isLength({ min: 10, max: 15 }).withMessage('Phone number should be between 10 and 15 digits.')

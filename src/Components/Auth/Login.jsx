@@ -2,38 +2,119 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import './Auth.css';
 import logo from '../User/Assets/RimLogo.png';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import baseurl from '../ApiService/ApiService';
 
 const Login = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState(null);
 
+  // Validation Functions
+  const validateEmail = (email) => {
+    if (!email) return 'Email is required';
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return 'Please enter a valid email address';
+    }
+    
+    return '';
+  };
+
+  const validatePassword = (password) => {
+    if (!password) return 'Password is required';
+    
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    
+    // Optional: Additional password strength checks
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    
+    if (!hasUppercase || !hasLowercase || !hasNumber) {
+      return 'Password must include uppercase, lowercase, and numeric characters';
+    }
+    
+    return '';
+  };
+
+  // Handle Input Changes with Validation
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Update form data
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear specific field error when user starts typing
+    setErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+    
+    // Clear server error when user modifies credentials
+    setServerError(null);
+  };
+
+  // Validate Entire Form
+  const validateForm = () => {
+    const newErrors = {
+      email: validateEmail(formData.email),
+      password: validatePassword(formData.password)
+    };
+
+    setErrors(newErrors);
+    
+    // Return true if no errors
+    return !Object.values(newErrors).some(error => error !== '');
+  };
+
+  // Handle Login Submission
   const handleLogin = async (e) => {
     e.preventDefault();
     
+    // Reset previous errors
+    setErrors({});
+    setServerError(null);
+    
+    // Validate Form
+    if (!validateForm()) {
+      return;
+    }
+    
     try {
-      const response = await axios.post(`${baseurl}/api/loginUser`, { email, password });
-      console.log('Response data:', response.data.data);
+      const response = await axios.post(`${baseurl}/api/loginUser`, {
+        email: formData.email,
+        password: formData.password
+      });
       
       if (response.data.message === 'Login successful') {
         localStorage.setItem('userData', JSON.stringify(response.data.data));
-        setError(null);
         if (response.data.role === 'admin') {
           navigate('/AdminDashboard/EnterpriseAi');
-        } else {
+        }
+        else if(response.data.role === 'technician'){
+          navigate('/User/StoreDetails');
+        }
+         else {
           navigate('/');
         }
-        console.log('Login successful');
       } else {
-        setError('Invalid email or password');
+        // Handle login failure
+        alert('Invalid email or password');
       }
     } catch (error) {
-      setError('Login failed');
       console.error('Login error:', error);
+      alert('Login failed. Please try again.');
     }
   };
 
@@ -41,35 +122,57 @@ const Login = () => {
     <div className="login-container">
       <div className="login-form">
         <h3>Welcome Back</h3>
+        
+        {serverError && (
+          <div className="server-error-banner">
+            {serverError}
+          </div>
+        )}
+        
         <form onSubmit={handleLogin}>
           <div className="form-group">
             <label>Email</label>
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              onBlur={handleChange}
               required
             />
+            {errors.email && (
+              <span className="error-text">{errors.email}</span>
+            )}
           </div>
+          
           <div className="form-group">
             <label>Password</label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              onBlur={handleChange}
               required
             />
+            {errors.password && (
+              <span className="error-text">{errors.password}</span>
+            )}
           </div>
-          {error && <p className="error-message">{error}</p>}
-
-          <button className="login-button" type="submit">
+          
+          <button 
+            className="login-button" 
+            type="submit"
+          >
             Login
           </button>
         </form>
+        
         <p className="signup-link">
-          <a href="/Auth/Signup">Sign-up</a>
+          Don't have an account? <a href="/Auth/Signup">Sign up</a>
         </p>
       </div>
+      
       <div className="login-banner">
         <img src={logo} alt="Logo" className="rim-logo" />
       </div>

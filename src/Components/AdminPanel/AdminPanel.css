@@ -61,6 +61,7 @@ a.navbar-brand{
   
 .sideNavContainer{
     background-color: white !important;
+    height: 100vh !important;
 }
 .sideNavLinks{
     height: 100% !important;
@@ -484,6 +485,13 @@ a.navbar-brand{
   .search-transport{
     background: #F24E1E;
     border: none;
+  }
+
+  #search-location{
+    background: #F24E1E !important;
+    color: white;
+    border: none;
+    cursor: pointer;
   }
 
   /* Order Summary */

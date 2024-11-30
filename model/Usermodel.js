@@ -1,7 +1,6 @@
 const { Sequelize } = require('sequelize');
 const { DataTypes } = Sequelize;
 const sequelize = require('../config/db');
-
 const User = sequelize.define('User', {
   uid: {
     type: DataTypes.INTEGER,
@@ -28,7 +27,7 @@ const User = sequelize.define('User', {
   role: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: 'user',
+    defaultValue: 'technician',
   },
   // UserProfile fields
   full_name: {
