@@ -23,9 +23,20 @@ const distributorValidationRules = () => {
     body('password')
       .notEmpty().withMessage('Password is required')
       .isLength({ min: 6 }).withMessage('Password should be min 6 charactors.'),
-    body('image')
-      .custom((value, { req }) => !!req.files)
-      .withMessage('Please upload an image file.')
+      body('image')
+      .custom((value, { req }) => {
+  
+          if (!req.files || req.files.length === 0) {
+              return false; // This will trigger the first withMessage
+          }
+          // Check maximum number of files
+          if (req.files.length > 1) {
+              return false; // This will trigger the second withMessage
+          }
+          return true;
+      })
+      .withMessage('Please upload at least one image file.')
+      .withMessage('You can upload a maximum of 1 image files.')
   ];
 };
 

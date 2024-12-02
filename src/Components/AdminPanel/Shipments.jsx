@@ -17,21 +17,55 @@ const Shipments = () => {
   const [showShipmentDetails, setShowShipmentDetails] = useState(false);
   const [selectedOrderOid, setSelectedOrderOid] = useState(null);
   const [shipments, setShipments] = useState([]); 
+  const [orders, setOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [orderStats, setOrderStats] = useState({
+    onDelivery: 0,
+    totalPending: 0
+  });
   const itemsPerPage = 6;
 
   useEffect(() => {
-    // Fetch shipments data from API
-    axios.get(`${baseurl}/api/getAllShipments`)
-      .then((response) => {
+    // Fetch shipments data
+    const fetchShipments = async () => {
+      try {
+        const response = await axios.get(`${baseurl}/api/getAllShipments`);
         if (response.data && response.data.data) {
-          setShipments(response.data.data); 
+          setShipments(response.data.data);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching shipments:", error);
-      });
+      }
+    };
+
+    // Fetch orders data
+    const fetchOrders = async () => {
+      try {
+        const response = await axios.get(`${baseurl}/api/orders`);
+        if (response.data && response.data.data) {
+          const ordersData = response.data.data;
+          setOrders(ordersData);
+          
+          // Calculate totals
+          const stats = ordersData.reduce((acc, order) => {
+            if (order.status === 'Shipping') {
+              acc.onDelivery += 1;
+            } else if (order.status === 'Received') {
+              acc.totalPending += 1;
+            }
+            return acc;
+          }, { onDelivery: 0, totalPending: 0 });
+          
+          setOrderStats(stats);
+        }
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      }
+    };
+
+    fetchShipments();
+    fetchOrders();
 
     const pendingShipmentOid = localStorage.getItem("pendingShipmentOid");
     if (pendingShipmentOid) {
@@ -46,13 +80,11 @@ const Shipments = () => {
     setSelectedOrderOid(null);
   };
 
-  // Filter shipments based on search term
+  // Enhanced filter function
   const filteredShipments = shipments.filter(shipment =>
     shipment.shipment_items.some(item => 
       item.product_name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) ||
-    shipment.distributor_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    shipment.dispatch_address.toLowerCase().includes(searchTerm.toLowerCase())
+    )
   );
 
   // Pagination calculations
@@ -133,7 +165,7 @@ const Shipments = () => {
                             : "bg-primary bg-opacity-10"
                         }`}
                         style={{
-                          height:`${(data.orders / 35) * 200}px`,
+                          height: `${(data.orders / 35) * 200}px`,
                           borderRadius: "4px",
                         }}
                       ></div>
@@ -157,12 +189,12 @@ const Shipments = () => {
                       <Users size={20} className="text-primary opacity-75" />
                       <span className="text-secondary">Total Delivery</span>
                     </div>
-                    <h3 className="mb-0 fw-bold">40,689</h3>
+                    <h3 className="mb-0 fw-bold">10</h3>
                   </div>
                   <div className="d-flex align-items-center gap-1 mt-2">
                     <TrendingUp size={16} className="text-success" />
                     <span className="text-success" style={{ fontSize: "0.875rem" }}>
-                      8.5% Up from yesterday
+                      Total Delivery
                     </span>
                   </div>
                 </div>
@@ -172,12 +204,12 @@ const Shipments = () => {
                       <Package size={20} className="text-warning opacity-75" />
                       <span className="text-secondary">On Delivery</span>
                     </div>
-                    <h3 className="mb-0 fw-bold">10,293</h3>
+                    <h3 className="mb-0 fw-bold">{orderStats.onDelivery}</h3>
                   </div>
                   <div className="d-flex align-items-center gap-1 mt-2">
                     <TrendingUp size={16} className="text-success" />
                     <span className="text-success" style={{ fontSize: "0.875rem" }}>
-                      1.3% Up from past week
+                    Active shipping orders
                     </span>
                   </div>
                 </div>
@@ -187,12 +219,12 @@ const Shipments = () => {
                       <Clock size={20} className="text-danger opacity-75" />
                       <span className="text-secondary">Total Pending</span>
                     </div>
-                    <h3 className="mb-0 fw-bold">2040</h3>
+                    <h3 className="mb-0 fw-bold">{orderStats.totalPending}</h3>
                   </div>
                   <div className="d-flex align-items-center gap-1 mt-2">
                     <TrendingUp size={16} className="text-success" />
                     <span className="text-success" style={{ fontSize: "0.875rem" }}>
-                      1.8% Up from yesterday
+                      Orders pending shipment
                     </span>
                   </div>
                 </div>
@@ -220,7 +252,7 @@ const Shipments = () => {
                       value={searchTerm}
                       onChange={(e) => {
                         setSearchTerm(e.target.value);
-                        setCurrentPage(1); // Reset to first page when searching
+                        setCurrentPage(1);
                       }}
                     />
                   </div>
@@ -248,10 +280,10 @@ const Shipments = () => {
                           <td className="py-3 px-4">{shipment.dispatch_date}</td>
                           <td className="py-3 px-4">{shipment.dispatch_address}</td>
                           <td className="py-2 px-3">
-                      <span style={statusStyles[shipment.status] || {}}>
-                        {shipment.status}
-                      </span>
-                    </td>
+                            <span style={statusStyles[shipment.status] || {}}>
+                              {shipment.status}
+                            </span>
+                          </td>
                         </tr>
                       ))
                     ) : (
@@ -264,7 +296,6 @@ const Shipments = () => {
                   </tbody>
                 </table>
               </div>
-
               <div className="d-flex justify-content-between align-items-center mt-3">
                 <span>
                   Showing {currentShipments.length} of {filteredShipments.length} entries

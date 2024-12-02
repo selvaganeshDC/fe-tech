@@ -16,6 +16,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 const AdminSideBar = ({ handleBackClick }) => {
+  const LoggedUser = JSON.parse(localStorage.getItem("userData"));
   const navigate = useNavigate();
   const location = useLocation();
   const [isLargeScreen, setIsLargeScreen] = useState(window.innerWidth > 768);
@@ -204,6 +205,7 @@ const AdminSideBar = ({ handleBackClick }) => {
               <a
                 href=""
                 className="d-flex align-items-center py-2 text-dark text-decoration-none"
+
                 data-bs-toggle="modal"
                 data-bs-target="#logoutModal"
               >
@@ -347,7 +349,7 @@ const AdminSideBar = ({ handleBackClick }) => {
             </a>
 
             <a 
-              href="" 
+              href="#" 
               className="nav-link text-white d-flex align-items-center mb-2"
               data-bs-dismiss="offcanvas" 
               data-bs-toggle="modal"
@@ -358,15 +360,16 @@ const AdminSideBar = ({ handleBackClick }) => {
           </nav>
         </div>
         <div
-        className="modal fade"
+        className="modal"
         id="logoutModal"
         tabIndex="-1"
         aria-labelledby="logoutModalLabel"
         aria-hidden="true"
+        data-bs-backdrop="false"
       >
         <div className="modal-dialog modal-dialog-centered modal-md">
-          <div className="modal-content" style={{ height: '300px', display: 'flex', justifyContent: 'center' }}>
-            <div className="modal-header">
+          <div className="modal-content logout-modal-content" style={{ height: '300px', display: 'flex', justifyContent: 'center' }}>
+            {/* <div className="modal-header">
               <h5 className="modal-title" id="logoutModalLabel">
                 Confirm Logout
               </h5>
@@ -376,26 +379,29 @@ const AdminSideBar = ({ handleBackClick }) => {
                 data-bs-dismiss="modal"
                 aria-label="Close"
               ></button>
-            </div>
+            </div> */}
             <div className="modal-body">
-              Are you sure you want to log out?
+            <div className="text-center mb-4">
+        <p className="text-dark fw-bold">Log Out</p>
+        <p className="text-muted mb-0">Hi {LoggedUser?.email || 'User@email.com'}</p>
+      </div>
             </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-bs-dismiss="modal"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={handleLogout}
-                data-bs-dismiss="modal"
-              >
-                Logout
-              </button>
+          <div className="text-center d-flex justify-content-center align-items-center flex-column mb-4">
+        <button
+          type="button"
+          className="btn btn-light w-50 mb-3 py-2"
+          data-bs-dismiss="modal"
+        >
+          No
+        </button>
+        <button
+          type="button"
+          className="btn btn-danger mb-3 w-50 py-2 logout-btn"
+          onClick={handleLogout}
+          data-bs-dismiss="modal"
+        >
+          Yes
+        </button>
             </div>
           </div>
         </div>
