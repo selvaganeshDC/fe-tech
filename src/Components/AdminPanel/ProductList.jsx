@@ -13,6 +13,8 @@ const ProductList = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState(""); // New state for search query
+  const [filteredProducts, setFilteredProducts] = useState([]); // New state for filtered products
   const itemsPerPage = 6;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,6 +37,23 @@ const ProductList = () => {
     }
   };
 
+  useEffect(() => {
+    filterProducts();
+  }, [searchQuery, products]);
+
+  const filterProducts = () => {
+    const filtered = products.filter(product =>
+      product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.product_id.toString().toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredProducts(filtered);
+    setCurrentPage(1); // Reset to first page when search query changes
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
   const handleViewDetails = (product) => {
     navigate(`productViewDetails/${product.pid}`);
   };
@@ -105,14 +124,21 @@ const ProductList = () => {
         setError("Please upload at least one image file.");
         return;
       }
-    } else {
+    } 
+    else if(imageFiles.length > 3 && existingImages.length > 3){
+      setError("Please upload max 3 image file.");
+      return;
+    }else {
       // New product case
       // Validate that at least one new image is uploaded
       if (imageFiles.length === 0) {
         setError("Please upload at least one image file.");
         return;
       }
-
+      else if(imageFiles.length > 3){
+        setError("Please upload max 3 image file.");
+        return;
+      }
       // Add new images
       Array.from(imageFiles).forEach((file) => {
         formData.append("images", file);
@@ -176,14 +202,13 @@ const ProductList = () => {
       setError("");
     }
   };
-
   const indexOfLastProduct = currentPage * itemsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - itemsPerPage;
-  const currentProducts = products.slice(
+  const currentProducts = filteredProducts.slice(
     indexOfFirstProduct,
     indexOfLastProduct
   );
-  const totalPages = Math.ceil(products.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => {
     if (pageNumber < 1) pageNumber = 1;
@@ -202,6 +227,8 @@ const ProductList = () => {
               className="form-control"
               placeholder="Search Product"
               id="productSearchBox"
+              value={searchQuery}
+              onChange={handleSearchChange}
             />
             {/* <button className="btn btn-outline-secondary" type="button">
               <i className="bi bi-search" style={{ color: "#808080" }}></i>

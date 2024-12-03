@@ -11,16 +11,11 @@ const OrderSummary = () => {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeFilter, setActiveFilter] = useState('All Orders');
-  const [selectedOrderOid, setSelectedOrderOid] = useState(null); // Track selected order oid
-  const [showShipmentDetails, setShowShipmentDetails] = useState(false); // Track modal visibility
+  const [selectedOrderOid, setSelectedOrderOid] = useState(null);
+  const [showShipmentDetails, setShowShipmentDetails] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(''); // New state for search
   const itemsPerPage = 6;
-  // const [orders, setOrders] = useState([]);
-  // const [currentPage, setCurrentPage] = useState(1);
-  // const [activeFilter, setActiveFilter] = useState('All Orders');
-  // const [selectedOrderOid, setSelectedOrderOid] = useState(null); 
-  // const [showShipmentDetails, setShowShipmentDetails] = useState(false); 
-  // const itemsPerPage = 6;
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -34,21 +29,24 @@ const OrderSummary = () => {
     fetchOrders();
   }, []);
 
-  const filteredOrders = orders.filter(order => {
-    if (activeFilter === 'All Orders') return true;
-    return order.status === activeFilter;
+  // Combine filtering and searching logic
+  const filteredAndSearchedOrders = orders.filter(order => {
+    // Filter by status
+    const statusMatch = activeFilter === 'All Orders' || order.status === activeFilter;
+    
+    // Search logic (case-insensitive)
+    const searchMatch = !searchTerm || 
+      order.order_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.status.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return statusMatch && searchMatch;
   });
   
   const indexOfLastOrder = currentPage * itemsPerPage;
   const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-
-  // const indexOfLastOrder = currentPage * itemsPerPage;
-  // const indexOfFirstOrder = indexOfLastOrder - itemsPerPage;
-  // const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-  // const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-
+  const currentOrders = filteredAndSearchedOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(filteredAndSearchedOrders.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
@@ -56,68 +54,70 @@ const OrderSummary = () => {
     }
   };
 
-  const toggleOrderItems = (orderId) => {
-    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
-  };
-
   const handleFilterChange = (filter) => {
     setActiveFilter(filter);
     setCurrentPage(1);
   };
 
-const handleShipmentClick = (oid) => {
-  navigate(`/AdminDashboard/Shipments/${oid}`); 
-};
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
 
-const statusStyles = {
-  'Received': {
-    color: '#267309',
-    background: '#E7F7E1',
-    borderRadius: '10px',
-    padding: '6px 12px',
-    display: 'inline-block'
-  },
-  'Shipping': {
-    color: '#6625F1',
-    background: '#F1EBFE',
-    borderRadius: '10px',
-    padding: '6px 12px',
-    display: 'inline-block'
-  },
-  'Complaint': {
-    color: '#FF1E00',
-    background: '#F9EDEB',
-    borderRadius: '10px',
-    padding: '6px 12px',
-    display: 'inline-block'
-  },
-  'Canceled': {
-    color: '#808080',
-    background: '#E5E7E5',
-    borderRadius: '10px',
-    padding: '6px 12px',
-    display: 'inline-block'
-  },
-  'Done': {
-    color: '#0C809A',
-    background: '#E1F3F7',
-    borderRadius: '10px',
-    padding: '6px 12px',
-    display: 'inline-block'
-  }
-};
+  const handleShipmentClick = (oid) => {
+    navigate(`/AdminDashboard/Shipments/${oid}`); 
+  };
+
+  const statusStyles = {
+    'Received': {
+      color: '#267309',
+      background: '#E7F7E1',
+      borderRadius: '10px',
+      padding: '6px 12px',
+      display: 'inline-block'
+    },
+    'Shipping': {
+      color: '#6625F1',
+      background: '#F1EBFE',
+      borderRadius: '10px',
+      padding: '6px 12px',
+      display: 'inline-block'
+    },
+    'Complaint': {
+      color: '#FF1E00',
+      background: '#F9EDEB',
+      borderRadius: '10px',
+      padding: '6px 12px',
+      display: 'inline-block'
+    },
+    'Canceled': {
+      color: '#808080',
+      background: '#E5E7E5',
+      borderRadius: '10px',
+      padding: '6px 12px',
+      display: 'inline-block'
+    },
+    'Done': {
+      color: '#0C809A',
+      background: '#E1F3F7',
+      borderRadius: '10px',
+      padding: '6px 12px',
+      display: 'inline-block'
+    }
+  };
 
   return (
     <div className="container mt-4">
       <div className="searches row align-items-center gx-3 mt-3 mb-3">
-        {/* Search Input */}
+        {/* Search Input - Updated */}
         <div className="col-12 col-md-8">
           <div className="input-group">
             <input
               type="text"
               className="form-control"
-              placeholder="Search Product"
-              id="productSearchBox"
+              placeholder="Search by Order ID, Customer Name, or Status"
+              value={searchTerm}
+              onChange={handleSearchChange}
             />
           </div>
         </div>
@@ -133,8 +133,8 @@ const statusStyles = {
         </div>
       </div>
 
-         {/* Order Tabs */}
-         <div className="mb-4">
+      {/* Order Tabs */}
+      <div className="mb-4">
         <ul className="nav nav-tabs">
           {['All Orders', 'Received', 'Shipping', 'Complaint', 'Canceled', 'Done'].map((filter) => (
             <li className="nav-item" key={filter}>
@@ -172,27 +172,26 @@ const statusStyles = {
                   <td className="py-3 px-4">{order.order_date}</td>
                   <td className="py-3 px-4">{order.total_amount}</td>
                   <td className="py-3 px-4">
-                  <span style={statusStyles[order.status] || {}}>
-                        {order.status}
-                      </span>
-                      </td>
-                      <td className="py-3 px-4">
+                    <span style={statusStyles[order.status] || {}}>
+                      {order.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
                     {order.status === 'Received' && (
                       <button
                         className="btn btn-primary btn-sm"
-                        onClick={() => handleShipmentClick(order.oid)} // Pass oid
+                        onClick={() => handleShipmentClick(order.oid)}
                       >
                         Create Shipments
                       </button>
                     )}
                   </td>
-                 
                 </tr>
               ))
             ) : (
               <tr>
                 <td colSpan="7" className="text-center">
-                  No orders found
+                  {searchTerm ? 'No matching orders found' : 'No orders found'}
                 </td>
               </tr>
             )}
@@ -202,7 +201,7 @@ const statusStyles = {
 
       <div className="d-flex justify-content-between align-items-center mt-3">
         <span>
-          Showing {currentOrders.length} of {orders.length} entries
+          Showing {currentOrders.length} of {filteredAndSearchedOrders.length} entries
         </span>
         <Pagination>
           <Pagination.Prev

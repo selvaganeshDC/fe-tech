@@ -25,12 +25,17 @@ const Distributors = () => {
   const [currentDistributor, setCurrentDistributor] = useState(null);
   const [imageFiles, setImageFiles] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState("");
   const itemsPerPage = 6;
-
   useEffect(() => {
-    fetchDistributors();
-  }, []);
+    if (searchQuery.trim()) {
+      handleSearch();
+    } else {
+      fetchDistributors();
+    }
+  }, [searchQuery]);
 
   const fetchDistributors = async () => {
     try {
@@ -42,9 +47,46 @@ const Distributors = () => {
     }
   };
 
+   const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      fetchDistributors();
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await axios.get(
+        `${baseurl}/api/searchDistributor?query=${encodeURIComponent(
+          searchQuery.trim()
+        )}`
+      );
+      setDistributors(response.data || []);
+      setCurrentPage(1); // Reset to first page when searching
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setDistributors([]);
+      } else {
+        console.error("Error searching distributors:", error);
+      }
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
+    // Image validation
+    if (imageFiles.length === 0) {
+      setError("Please upload at least one image.");
+      return;
+    }
+
+    if (imageFiles.length > 1) {
+      setError("You can upload only one image.");
+      return;
+    }
 
     try {
       const formData = new FormData();
@@ -91,11 +133,16 @@ const Distributors = () => {
         url,
         data: formData,
       });
-
-      alert(response.data.message);
-      fetchDistributors();
-      resetForm();
-      toggleModal();
+      if(response.status === 201 || response.status===201){
+        alert(response.data.message);
+        fetchDistributors();
+        resetForm();
+        toggleModal();
+      }
+      else{
+        setError(response.data.message);
+      }
+     
     } catch (error) {
       console.error("Error submitting form:", error);
       setError(error.response?.data?.message || "Failed to save distributor");
@@ -151,8 +198,19 @@ const Distributors = () => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    setImageFiles((prevFiles) => [...prevFiles, ...files]);
-    setError("");
+    const existingFileNames = imageFiles.map((file) => file.name);
+  
+    // Filter out duplicates
+    const newFiles = files.filter((file) => !existingFileNames.includes(file.name));
+  
+    if (newFiles.length === 0) {
+      alert("File already added");
+    } else {
+      setImageFiles((prevFiles) => [...prevFiles, ...newFiles]);
+    }
+  
+    // Reset file input value to allow re-upload of the same file
+    e.target.value = '';
   };
 
   const removeNewImage = (index) => {
@@ -201,6 +259,8 @@ const Distributors = () => {
               className="form-control"
               placeholder="Search Product"
               id="productSearchBox"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>

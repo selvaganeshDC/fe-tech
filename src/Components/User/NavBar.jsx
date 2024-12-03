@@ -6,8 +6,10 @@ import RIM from "../User/Assets/RimLogo.png";
 import UserLogo from "../User/Assets/user-logo.png";
 import hamburger from "../User/Assets/hamburger.png";
 import ProfilePic from "../User/Assets/user-logo.png";
+import axios from "axios";
+import baseurl from "../ApiService/ApiService";
 import { useNavigate } from "react-router-dom";
-import { X } from 'lucide-react';
+import { X, Info } from 'lucide-react';
 import { MdOutlineLogout, MdLogin, MdShoppingCart, MdAccountCircle, MdHistory, MdLogout } from "react-icons/md";
 import { LuUserCircle } from "react-icons/lu";
 
@@ -16,6 +18,10 @@ const NavBar = () => {
   const [isMobileDropdownOpen, setIsMobileDropdownOpen] = useState(false);
   const [screenWidth, setScreenWidth] = useState(window.innerWidth);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [loggedUser, setLoggedUser] = useState({});
   const navigate = useNavigate();
 
@@ -27,11 +33,45 @@ const NavBar = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const notifications = [
-    { id: 1, type: "order", title: "Order Received", message: "Order #123 has been received." },
-    { id: 2, type: "complaint", title: "Complaint", message: "New complaint received." },
-    { id: 3, type: "order", title: "Order Update", message: "Order #124 has been shipped." },
-  ];
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${loggedUser.role === 'distributor' ? 
+        `${baseurl}/api/forumtakens/${loggedUser.uid}` : `${baseurl}/api/forumtakes/${loggedUser.uid}` }`);
+      
+      // Transform API data into notification format
+      const apiNotifications = response.data.data.map(item => ({
+        id: item.takeId,
+        type: 'forum', // You can adjust this based on your needs
+        title: `Forum Taken: ${item.takeId}`,
+        message: `Taken by ${item?.forumOwnerId || item.distributorName} at ${new Date(item.takenAt).toLocaleString()}`,
+        details: item // Keep full item details if needed
+      }));
+
+      setNotifications(apiNotifications);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+      setError('Failed to load notifications');
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch notifications when component mounts or when needed
+  useEffect(() => {
+    if (showNotifications) {
+      fetchNotifications();
+    }
+  }, [showNotifications]);
+
+  // notifications = [
+  //   { id: 1, type: "order", title: "Order Received", message: "Order #123 has been received." },
+  //   { id: 2, type: "complaint", title: "Complaint", message: "New complaint received." },
+  //   { id: 3, type: "order", title: "Order Update", message: "Order #124 has been shipped." },
+  // ];
 
   const handleClickNotify = () => setShowNotifications(!showNotifications);
 
@@ -39,6 +79,9 @@ const NavBar = () => {
 
   const toggleMobileDropdown = () => setIsMobileDropdownOpen(!isMobileDropdownOpen);
 
+  const handleShowDetails = (notification) => {
+    setSelectedNotification(notification);
+  };
   const handleLogout = () => {
     localStorage.removeItem("userData");
     navigate("/");
@@ -149,7 +192,12 @@ const NavBar = () => {
 
             {/* Mobile Logo */}
             <img src={RIM} alt="RIM Logo" className="mobile-logo" />
-
+            <div className="d-flex justify-content-around align-items-center gap-3"> <img
+              src={notify}
+              alt="Notifications"
+              onClick={handleClickNotify}
+              style={{ cursor: "pointer" }}
+            />
             {/* Profile Picture */}
             <img
               src={ProfilePic}
@@ -159,7 +207,8 @@ const NavBar = () => {
                 height: "30px",
                 borderRadius: "50%",
               }}
-            />
+            /></div>
+           
           </div>
 
           {/* Offcanvas Sidebar */}
@@ -172,7 +221,7 @@ const NavBar = () => {
             <div className="offcanvas-header">
               {/* Back Button */}
               <div className="p-3 d-flex align-items-center justify-content-between w-100">
-                <div className='d-flex align-items-center justify-content-between' ><img src={ProfilePic} style={{ width: '50px', height: '50px', border: '50%' }} alt="logo" className="img-fluid" />
+                <div className='d-flex align-items-center justify-content-between' ><img src={ProfilePic} style={{ width: '50px', height: '50px' }} alt="logo" className="rounded-circle" />
                   <span><h6 className='mb-0 ms-3'>{loggedUser?.username || 'Guest user'}</h6></span></div>
                 <div>
                   <button
@@ -180,7 +229,7 @@ const NavBar = () => {
                     className='btn text-white'
                     data-bs-dismiss="offcanvas"
                     aria-label="Close"
-                  ><span><i class="bi bi-chevron-left text-white"></i></span> Back</button></div>
+                  ><span><i className="bi bi-chevron-left text-white"></i></span> Back</button></div>
 
               </div>
             </div>
@@ -193,7 +242,7 @@ const NavBar = () => {
                   <li className="py-2">
                     <a
                       href="/Auth/Login"
-                      className="text-white text-decoration-none px-3 d-flex align-items-center"
+                      className="text-white text-decoration-none px-3 d-flex align-items-center pe-auto"
                     >
                       <MdLogin className="me-2" /> {/* Login Icon */}
                       Login
@@ -240,7 +289,7 @@ const NavBar = () => {
                     <li className="py-2">
                       <a
                         href="/"
-                        className="text-white text-decoration-none px-3 d-flex align-items-center text-danger"
+                        className="text-white text-decoration-none px-3 d-flex align-items-center"
                         onClick={handleLogout}
                       >
                         <MdLogout className="me-2" /> {/* Logout Icon */}
@@ -255,10 +304,8 @@ const NavBar = () => {
 
           </div>
         </div>
-
-
       )}
-      {showNotifications && (
+       {showNotifications && (
         <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-start justify-content-end" style={{ zIndex: 2000 }}>
           {/* Semi-transparent background overlay */}
           <div
@@ -273,31 +320,92 @@ const NavBar = () => {
                 <h5 className="mb-0">Notifications</h5>
                 <button
                   className="btn btn-link border border-danger rounded-circle text-decoration-none p-0 text-danger"
-                  onClick={() => setShowNotifications(false)}
+                  onClick={() => {
+                    setShowNotifications(false);
+                    setSelectedNotification(null);
+                  }}
                 >
                   <X className="fs-5" />
                 </button>
               </div>
 
-              <div className="overflow-auto" style={{ maxHeight: '70vh' }}>
-                {notifications.map((notification) => (
-                  <div
-                    key={notification.id}
-                    className="d-flex align-items-start p-3 mb-2 border-bottom"
-                  >
-                    <div
-                      className="d-flex align-items-center justify-content-center flex-shrink-0 rounded-circle bg-light me-3"
-                      style={{ width: '40px', height: '40px' }}
-                    >
-                      {getIcon(notification.type)}
+              {/* Notification Details Modal */}
+              {selectedNotification && (
+                <div 
+                className="modal fade show" 
+                style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} 
+                tabIndex="-1"
+              >
+                <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                  <div className="modal-content">
+                    <div className="modal-header">
+                      <h5 className="modal-title">Notification Details</h5>
+                      <button 
+                        type="button" 
+                        className="btn-close" 
+                        onClick={() => setSelectedNotification(null)}
+                        aria-label="Close"
+                      ></button>
                     </div>
-
-                    <div className="flex-grow-1">
-                      <strong className="d-block mb-1">{notification.title}</strong>
-                      <small className="text-muted">{notification.message}</small>
+                    <div className="modal-body">
+                      <div className="table-responsive">
+                        <table className="table table-striped">
+                          <tbody>
+                            <tr>
+                              <th className="col-4">Owner Name</th>
+                              <td>{selectedNotification.details?.forumOwnerId || selectedNotification.details.distributorName}</td>
+                            </tr>
+                            <tr>
+                              <th>Phone</th>
+                              <td>{selectedNotification.details?.forumOwnerPhone || selectedNotification.details.distributorPhone}</td>
+                            </tr>
+                            <tr>
+                              <th>Email</th>
+                              <td>{selectedNotification.details?.forumOwnerEmail || selectedNotification.details.distributorEmail}</td>
+                            </tr>
+                            <tr>
+                              <th>Address</th>
+                              <td>{selectedNotification.details?.forumOwnerAddress || selectedNotification.details.distributorAddress}</td>
+                            </tr>
+                            <tr>
+                              <th>Taken At</th>
+                              <td>{new Date(selectedNotification.details.takenAt).toLocaleString()}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+              </div>
+              )}
+
+              <div className="overflow-auto" style={{ maxHeight: '70vh' }}>
+                {loading ? (
+                  <div className="text-center py-3">Loading notifications...</div>
+                ) : error ? (
+                  <div className="text-danger text-center py-3">{error}</div>
+                ) : notifications.length === 0 ? (
+                  <div className="text-center py-3">No notifications</div>
+                ) : (
+                  notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="d-flex align-items-start p-3 mb-2 border-bottom position-relative"
+                    >
+                      <div className="flex-grow-1">
+                        <strong className="d-block mb-1">{notification.title}</strong>
+                        <small className="text-muted">{notification.message}</small>
+                      </div>
+                      <button 
+                        className="btn btn-sm btn-outline-info ms-2"
+                        onClick={() => handleShowDetails(notification)}
+                      >
+                        <Info size={16} />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

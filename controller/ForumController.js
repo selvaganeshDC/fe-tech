@@ -1,6 +1,7 @@
 const { where, Sequelize } = require('sequelize');
 const Forum = require('../model/ForumModel'); 
 const ForumTake = require('../model/ForumTakesmodel');
+const User = require('../model/UserModel');
 
 // Add a new forum
 const addForum = async (req, res) => {
@@ -121,10 +122,19 @@ const showNotifyForDistributor = async (req, res) => {
           return null;
         }
 
+        const userData = await User.findOne({
+          where: {
+            uid: forumData.user_id
+          }
+        });
+
         return {
           takeId: forum.ftid,
           forumId: forumData.fid,
-          forumOwnerId: forumData.user_id,
+          forumOwnerId: userData?.full_name|| userData.username,
+          forumOwnerPhone: userData?.mobile_number || 'No Mobile number',
+          forumOwnerAddress: userData?.address || 'No Address',
+          forumOwnerEmail: userData.email,
           takenAt: forum.taken_at
         };
       })
@@ -154,10 +164,99 @@ const showNotifyForDistributor = async (req, res) => {
   }
 };
 
+const showNotifyForTechnician = async (req, res) => {
+  const userId = req.params.id;
 
+  try {
+    // Find user forums
+    const userForums = await Forum.findAll({
+      where: {
+        user_id: userId
+      },
+      include: [
+        {
+          model: User,
+          as: 'user',
+        }
+      ]
+    });
+
+    // If no forums found for the user
+    if (userForums.length === 0) {
+      return res.status(200).json({
+        message: 'No forums found for this user',
+        data: []
+      });
+    }
+
+    // Find forum takes
+    const forums = await ForumTake.findAll({
+      where: {
+        forum_id: userForums.map(forum => forum.fid)
+      },
+      include: [
+        {
+          model: User, 
+          as: 'distributor', 
+          attributes: ['uid', 'username', 'email', 'mobile_number', 'address'] 
+        },
+      ],
+      order: [['taken_at', 'DESC']]
+    });
+
+    // Check if any forum takes exist
+    if (forums.length === 0) {
+      return res.status(200).json({
+        message: 'No forum takes found for this user',
+        data: []
+      });
+    }
+
+    // Transform the results to a more readable format
+    const formattedForums = forums.map(forum => {
+      // Safely extract forum and user data
+      const forumData = forum.forum || {};
+      const userData = forumData.user || {};
+
+      return {
+        takeId: forum.ftid,
+        forumId: forumData.fid,
+        // forumOwnerId: userData.uid,
+        // forumOwnerName: userData.full_name || userData.username || 'Unknown',
+        // forumOwnerPhone: userData.mobile_number || 'No Mobile number',
+        // forumOwnerEmail: userData.email || 'No Email',
+        distributorName: forum.distributor?.username || 'No Distributor',
+        distributorEmail: forum.distributor?.email || 'No Email',
+        distributorPhone: forum.distributor?.mobile_number || 'No Phone',
+        distributorAddress: forum.distributor?.address || 'No Address',
+        takenAt: forum.taken_at
+      };
+    });
+
+    return res.status(200).json({
+      message: 'Forums retrieved successfully',
+      data: formattedForums
+    });
+  } catch (error) {
+    console.error('Detailed error retrieving forums:', {
+      message: error.message,
+      stack: error.stack,
+      userId: userId
+    });
+
+    return res.status(500).json({
+      message: 'Failed to retrieve forums',
+      error: {
+        message: error.message,
+        name: error.name
+      }
+    });
+  }
+};
 module.exports = {
   addForum,
   viewForums,
   takeForum,
-  showNotifyForDistributor
+  showNotifyForDistributor,
+  showNotifyForTechnician
 };

@@ -13,4 +13,6 @@ router.post('/forumtake/:id', ForumController.takeForum);
 
 router.get('/forumtakens/:id', ForumController.showNotifyForDistributor);
 
+router.get('/forumtakes/:id', ForumController.showNotifyForTechnician);
+
 module.exports = router;

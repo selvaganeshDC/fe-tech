@@ -28,13 +28,13 @@ exports.addDistributor = async (req, res) => {
             } 
         });
         if (existingDistributor) {
-            return res.status(400).json({ 
+            return res.json({ 
                 message: 'Distributor with this email or GST number already exists' 
             });
         }
         const existingUser = await User.findOne({where: {email}});
         if (existingUser) {
-            return res.status(400).json({
+            return res.json({
                 message: 'User with this email already exists'
             });
         }
@@ -52,22 +52,27 @@ exports.addDistributor = async (req, res) => {
             phoneno,
             email
         });
-        const user = await User.create({
-            username: contact_person_name,
-            email,
-            password: hashedPassword,
-            role: 'distributor'
-        }); 
 
-        // Handle image uploads
         if (req.files && req.files.length > 0) {
             const imageEntries = req.files.map((file) => ({
                 distributor_id: distributor.did,
                 image_path: file.path,
             }));
 
-            await DistributorImage.bulkCreate(imageEntries);
+           const images = await DistributorImage.bulkCreate(imageEntries);
+           if(!images){
+            return res.json({
+                message: 'Error in uploading images'
+            });
+           }
         }
+        const user = await User.create({
+            username: contact_person_name,
+            email,
+            mobile_number : phoneno,
+            password: hashedPassword,
+            role: 'distributor'
+        }); 
 
         res.status(201).json({ 
             message: 'Distributor added successfully', 

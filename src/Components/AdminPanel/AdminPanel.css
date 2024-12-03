@@ -198,6 +198,9 @@ a.navbar-brand{
     border-radius: 4px;
     border: 1px solid #ccc;
   }
+  .logout-modal-content{
+    overflow-y: hidden;
+  }
   
   .btn-save {
     background-color: #ff5722;
@@ -208,7 +211,9 @@ a.navbar-brand{
     border-radius: 4px;
     cursor: pointer;
   }
-  
+  .logout-btn{
+    background-color: #ff5722 !important;
+  }
   .image-upload-section {
     display: flex;
     align-items: center;

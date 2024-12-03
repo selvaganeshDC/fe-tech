@@ -74,7 +74,7 @@ const StoreDetails = () => {
             <NavBar/>
             <UserSearch/>
             <SearchBarLocation/>
-            <div className="container mt-5">
+            <div className="container mt-5 mb-3">
                 <div className="row g-4">
                     {distributors.map((distributor, index) => (
                         <div key={distributor.did || index} className="col-6 col-sm-6 col-md-4 col-lg-3">
