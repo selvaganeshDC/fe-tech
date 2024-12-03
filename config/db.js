@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 
-const sequelize = new Sequelize('rimhub', 'root', 'pass12345', {
+const sequelize = new Sequelize('rimhub1', 'root', '', {
     host: 'localhost',
     dialect: 'mysql',
     port: '3306'

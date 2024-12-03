@@ -60,7 +60,7 @@ const ShipmentConfirmForm = () => {
                   <div className="col-md-4">
                     <label htmlFor="orderId" className="form-label fw-medium">Order ID</label>
                   </div>
-                  <div className="col-md-1 text-center">:</div>
+                  <div className="d-none d-md-block col-md-1 text-center">:</div>
                   <div className="col-md-7">
                     <input
                       type="text"
@@ -76,7 +76,7 @@ const ShipmentConfirmForm = () => {
                   <div className="col-md-4">
                     <label htmlFor="shipmentId" className="form-label fw-medium">Shipment ID</label>
                   </div>
-                  <div className="col-md-1 text-center">:</div>
+                  <div className="d-none d-md-block col-md-1 text-center">:</div>
                   <div className="col-md-7">
                     <input
                       type="text"
@@ -92,7 +92,7 @@ const ShipmentConfirmForm = () => {
                   <div className="col-md-4">
                     <label htmlFor="distributorName" className="form-label fw-medium">Distributor Name</label>
                   </div>
-                  <div className="col-md-1 text-center">:</div>
+                  <div className="d-none d-md-block col-md-1 text-center">:</div>
                   <div className="col-md-7">
                     <input
                       type="text"
@@ -110,7 +110,7 @@ const ShipmentConfirmForm = () => {
                   <div className="col-md-4">
                     <label htmlFor="totalQuantity" className="form-label fw-medium">Total Quantity</label>
                   </div>
-                  <div className="col-md-1 text-center">:</div>
+                  <div className="d-none d-md-block col-md-1 text-center">:</div>
                   <div className="col-md-7">
                     <input
                       type="text"
@@ -126,7 +126,7 @@ const ShipmentConfirmForm = () => {
                   <div className="col-md-4">
                     <label htmlFor="totalPrice" className="form-label fw-medium">Total Price</label>
                   </div>
-                  <div className="col-md-1 text-center">:</div>
+                  <div className="d-none d-md-block col-md-1 text-center">:</div>
                   <div className="col-md-7">
                     <input
                       type="text"
@@ -142,7 +142,7 @@ const ShipmentConfirmForm = () => {
                   <div className="col-md-4">
                     <label htmlFor="status" className="form-label fw-medium">Status</label>
                   </div>
-                  <div className="col-md-1 text-center">:</div>
+                  <div className="d-none d-md-block col-md-1 text-center">:</div>
                   <div className="col-md-7">
                     <input
                       type="text"
@@ -160,7 +160,7 @@ const ShipmentConfirmForm = () => {
                   <div className="col-md-4">
                     <label htmlFor="dispatchDate" className="form-label fw-medium">Dispatch Date</label>
                   </div>
-                  <div className="col-md-1 text-center">:</div>
+                  <div className="d-none d-md-block col-md-1 text-center">:</div>
                   <div className="col-md-7">
                     <input
                       type="text"
@@ -176,7 +176,7 @@ const ShipmentConfirmForm = () => {
                   <div className="col-md-4">
                     <label htmlFor="dispatchAddress" className="form-label fw-medium">Dispatch Address</label>
                   </div>
-                  <div className="col-md-1 text-center">:</div>
+                  <div className="d-none d-md-block col-md-1 text-center">:</div>
                   <div className="col-md-7">
                     <input
                       type="text"
@@ -192,7 +192,7 @@ const ShipmentConfirmForm = () => {
                   <div className="col-md-4">
                     <label htmlFor="transport" className="form-label fw-medium">Transport</label>
                   </div>
-                  <div className="col-md-1 text-center">:</div>
+                  <div className="d-none d-md-block col-md-1 text-center">:</div>
                   <div className="col-md-7">
                     <input
                       type="text"
@@ -209,7 +209,8 @@ const ShipmentConfirmForm = () => {
                 <div className="row mb-3">
                   <div className="col-12">
                     <h4 className="mb-3">Shipment Items</h4>
-                    <table className="table table-bordered">
+                    <div className="table-responsive">
+                    <table className="table table-striped shipment-table">
                       <thead>
                         <tr>
                           <th>Product ID</th>
@@ -229,6 +230,7 @@ const ShipmentConfirmForm = () => {
                         ))}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 </div>
               </form>

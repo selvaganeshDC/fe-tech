@@ -2,6 +2,7 @@ const { where, Sequelize } = require('sequelize');
 const Forum = require('../model/ForumModel'); 
 const ForumTake = require('../model/ForumTakesmodel');
 const User = require('../model/UserModel');
+const Product = require('../model/Productmodel');
 
 // Add a new forum
 const addForum = async (req, res) => {
@@ -40,26 +41,72 @@ const takeForum = async (req, res) => {
     });
   }
 
-  try {
-    const forum = await ForumTake.create({
-      forum_id: forumId,
-      distributor_id,
-    });
-    const updatedForum = await Forum.update(
-      { status: 'Taken' }, // New status
-      { where: { fid: forumId } } // Condition to identify the forum
-    );
+  const transaction = await Forum.sequelize.transaction();
 
-    // Check if the update was successful
-    if (!updatedForum[0]) {
+  try {
+    // First, find the forum to ensure it exists and get its product details
+    const forum = await Forum.findByPk(forumId, {
+      include: [{ model: Product, as: 'product' }],
+      transaction
+    });
+
+    if (!forum) {
+      await transaction.rollback();
       return res.status(404).json({
-        message: 'Forum not found or already taken',
+        message: 'Forum not found',
       });
     }
-    return res
-      .status(201)
-      .json({ message: 'Forum taken successfully', data: forum });
-  } catch (error) {
+
+    // Check if the forum is already taken
+    if (forum.status === 'Taken') {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: 'Forum is already taken',
+      });
+    }
+
+    // Check if there's sufficient product stock
+    if (forum.product.stocks < forum.quantity) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: 'Insufficient product stock',
+      });
+    }
+
+    // Reduce product stock
+    await Product.decrement('stocks', {
+      by: forum.quantity,
+      where: { pid: forum.product_id },
+      transaction
+    });
+
+    // Create forum take record
+    const forumTake = await ForumTake.create({
+      forum_id: forumId,
+      distributor_id,
+    }, { transaction });
+
+    // Update forum status
+    await Forum.update(
+      { status: 'Taken' },
+      { 
+        where: { fid: forumId },
+        transaction
+      }
+    );
+
+    // Commit the transaction
+    await transaction.commit();
+
+    return res.status(201).json({
+      message: 'Forum taken successfully',
+      data: {
+        forumTake,
+        updatedProductStock: forum.product.stocks - forum.quantity
+      }
+    });
+  }catch (error) {
+    if (transaction) await transaction.rollback();
     console.error('Error taking forum:', error);
     return res.status(500).json({
       message: 'Failed to take forum',
@@ -67,6 +114,7 @@ const takeForum = async (req, res) => {
     });
   }
 };
+
 
 const showNotifyForDistributor = async (req, res) => {
   const userId = req.params.id;
@@ -131,7 +179,7 @@ const showNotifyForDistributor = async (req, res) => {
         return {
           takeId: forum.ftid,
           forumId: forumData.fid,
-          forumOwnerId: userData?.full_name|| userData.username,
+          forumOwnerId: forumData?.name|| userData.username,
           forumOwnerPhone: userData?.mobile_number || 'No Mobile number',
           forumOwnerAddress: userData?.address || 'No Address',
           forumOwnerEmail: userData.email,

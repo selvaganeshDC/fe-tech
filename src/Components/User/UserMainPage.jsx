@@ -11,12 +11,15 @@ const UserMainPage = () => {
   useEffect(() => {
     const LoggedUser = JSON.parse(localStorage.getItem("userData"));
     if (!LoggedUser) {
-      navigate("/");
+      navigate("/Auth/Login");
     } else if (LoggedUser.role === "admin") {
       navigate("/AdminDashboard/EnterpriseAi");
     }
     else if(LoggedUser.role === "technician"){
       navigate('/User/StoreDetails');
+    }
+    else{
+      navigate('/');
     }
   }, [navigate]);  // Removed LoggedUser from dependency array
 

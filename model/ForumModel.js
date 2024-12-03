@@ -2,6 +2,8 @@ const { Sequelize } = require('sequelize');
 const { DataTypes } = Sequelize;
 const sequelize = require('../config/db');
 const User = require('./UserModel');
+const Product = require('./Productmodel'); // Make sure to import the Product model
+
 const Forum = sequelize.define('Forum', {
     fid: {
         type: DataTypes.INTEGER,
@@ -9,12 +11,20 @@ const Forum = sequelize.define('Forum', {
         autoIncrement: true,
         allowNull: false,
     },
-    user_id:{
+    user_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
             model: User,
             key: 'uid'
+        }
+    },
+    product_id: { // Add this field to link to the Product
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: Product,
+            key: 'pid' // Assuming 'pid' is the primary key in your Product model
         }
     },
     product_name: {
@@ -47,14 +57,26 @@ const Forum = sequelize.define('Forum', {
     timestamps: true,
 });
 
+// User associations
 User.hasMany(Forum, {
     foreignKey: 'user_id',
     as: 'forums'
-  });
+});
 
-  Forum.belongsTo(User, {
+Forum.belongsTo(User, {
     foreignKey: 'user_id',
     as: 'user'
-  });
+});
+
+// Product associations
+Product.hasMany(Forum, {
+    foreignKey: 'product_id',
+    as: 'forums'
+});
+
+Forum.belongsTo(Product, {
+    foreignKey: 'product_id',
+    as: 'product'
+});
 
 module.exports = Forum;

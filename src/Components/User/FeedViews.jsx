@@ -66,6 +66,7 @@ const FeedViews = () => {
 
     const submissionData = {
       user_id: user.uid,
+      product_id: products.find((product) => product.product_name === selectedProduct)?.pid,
       product_name: selectedProduct,
       quantity: formData.quantity,
       name: formData.name,
@@ -106,6 +107,7 @@ const FeedViews = () => {
       setSelectedProductImage(selectedProduct.image_path);
     }
   };
+  const availableProducts = products.filter(product => product.stocks > 0);
   const handleTakeForum = async (forumId) => {
     // Check if user and user.uid exist
     if (!user || !user.uid) {
@@ -252,7 +254,7 @@ const FeedViews = () => {
                   <option value="" disabled>
                     Select Product Name
                   </option>
-                  {products.map((product) => (
+                  {availableProducts.map((product) => (
                     <option key={product.pid} value={product.product_name}>
                       {product.product_name}
                     </option>

@@ -20,6 +20,7 @@ const NavBar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loggedUser, setLoggedUser] = useState({});
@@ -72,7 +73,14 @@ const NavBar = () => {
   //   { id: 2, type: "complaint", title: "Complaint", message: "New complaint received." },
   //   { id: 3, type: "order", title: "Order Update", message: "Order #124 has been shipped." },
   // ];
-
+  const handleMoveMainpage = () =>{
+    if(loggedUser.role === 'technician'){
+      navigate('/User/StoreDetails');
+    }
+    else if(loggedUser.role === 'distributor'){
+      navigate('/');
+    }
+  }
   const handleClickNotify = () => setShowNotifications(!showNotifications);
 
   const toggleUserDropdown = () => setToggleUserDropdown(!isToggleUserDropdown);
@@ -110,7 +118,7 @@ const NavBar = () => {
             </a>
           </div>
           <div className="d-flex align-items-center">
-            <img src={RIM} alt="RIM Logo" style={{ height: "50px" }} />
+            <img src={RIM} alt="RIM Logo" onClick={handleMoveMainpage} style={{ height: "50px" }} />
           </div>
           <div className="d-flex align-items-center gap-3 position-relative">
             <img
@@ -322,6 +330,7 @@ const NavBar = () => {
                   className="btn btn-link border border-danger rounded-circle text-decoration-none p-0 text-danger"
                   onClick={() => {
                     setShowNotifications(false);
+                    setShowAllNotifications(false); 
                     setSelectedNotification(null);
                   }}
                 >
@@ -388,7 +397,8 @@ const NavBar = () => {
                 ) : notifications.length === 0 ? (
                   <div className="text-center py-3">No notifications</div>
                 ) : (
-                  notifications.map((notification) => (
+                  <>
+                  {notifications.slice(0, 3).map((notification) => (
                     <div
                       key={notification.id}
                       className="d-flex align-items-start p-3 mb-2 border-bottom position-relative"
@@ -397,14 +407,50 @@ const NavBar = () => {
                         <strong className="d-block mb-1">{notification.title}</strong>
                         <small className="text-muted">{notification.message}</small>
                       </div>
-                      <button 
+                      <button
                         className="btn btn-sm btn-outline-info ms-2"
                         onClick={() => handleShowDetails(notification)}
                       >
                         <Info size={16} />
                       </button>
                     </div>
-                  ))
+                  ))}
+    
+                  {notifications.length > 3 && !showAllNotifications && (
+                    <div className="text-center py-3">
+                      <button
+                        className="btn"
+                        style={{
+                          backgroundColor: "orangered",
+                          color: "white",
+                          border: "none",
+                        }}
+                        onClick={() => setShowAllNotifications(true)}
+                      >
+                        View More
+                      </button>
+                    </div>
+                  )}
+    
+                  {showAllNotifications &&
+                    notifications.slice(3).map((notification) => (
+                      <div
+                        key={notification.id}
+                        className="d-flex align-items-start p-3 mb-2 border-bottom position-relative"
+                      >
+                        <div className="flex-grow-1">
+                          <strong className="d-block mb-1">{notification.title}</strong>
+                          <small className="text-muted">{notification.message}</small>
+                        </div>
+                        <button
+                          className="btn btn-sm btn-outline-info ms-2"
+                          onClick={() => handleShowDetails(notification)}
+                        >
+                          <Info size={16} />
+                        </button>
+                      </div>
+                    ))}
+                </>
                 )}
               </div>
             </div>

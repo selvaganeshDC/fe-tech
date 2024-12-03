@@ -1,23 +1,70 @@
-const User = require('../model/Usermodel');
+const User = require('../model/UserModel');
 const Products = require('../model/Productmodel');
 const AddToCart = require('../model/AddToCartModel');
 const ProductImages =require('../model/productImagesmodel');
 // Add a product to the cart
 exports.addToCart = async (req, res) => {
-  const { user_id, product_id, quantity } = req.body;
+  const { 
+    user_id, 
+    product_id, 
+    product_name, 
+    quantity, 
+    distributor_name, 
+    distributor_location, 
+    phone_number 
+  } = req.body;
+
   try {
+    // Validate user
     const user = await User.findByPk(user_id);
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
-    const product = await Products.findOne({ where: { product_id: product_id }});
+
+    // Validate product
+    const product = await Products.findOne({ 
+      where: { 
+        product_id: product_id, 
+        product_name: product_name 
+      }
+    });
     if (!product) {
-    return res.status(404).json({ message: 'Product not found.' });
+      return res.status(404).json({ message: 'Product not found.' });
     }
-    const cartItem = await AddToCart.create({ user_id, product_id, quantity });
+
+    // Check if item already exists in cart
+    const existingCartItem = await AddToCart.findOne({
+      where: { 
+        user_id, 
+        product_id 
+      }
+    });
+
+    let cartItem;
+    if (existingCartItem) {
+      // Update quantity if item already exists
+      existingCartItem.quantity += quantity;
+      cartItem = await existingCartItem.save();
+    } else {
+      // Create new cart item
+      cartItem = await AddToCart.create({ 
+        user_id, 
+        product_id, 
+        product_name,
+        quantity, 
+        distributor_name, 
+        distributor_location, 
+        phone_number 
+      });
+    }
+
     return res.status(201).json(cartItem);
   } catch (error) {
-    return res.status(500).json({ message: 'Error adding to cart.', error });
+    console.error('Add to Cart Error:', error);
+    return res.status(500).json({ 
+      message: 'Error adding to cart.', 
+      error: error.message 
+    });
   }
 };
  

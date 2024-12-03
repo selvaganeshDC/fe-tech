@@ -19,10 +19,26 @@ const AddToCart = sequelize.define('AddToCart', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  product_name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   quantity: {
     type: DataTypes.INTEGER,
     allowNull: false
   },
+  distributor_name: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  distributor_location: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  phone_number: {
+    type: DataTypes.STRING,
+    allowNull: true
+  }
 }, {
   tableName: 'add_to_cart',
   timestamps: true,
