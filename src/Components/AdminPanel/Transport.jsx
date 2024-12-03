@@ -248,7 +248,7 @@ const Transport = () => {
             </button>
           </div>
           <div className="col-md-3 mb-3 text-md-end">
-            <button className="btn add-transport-btn" onClick={() => setIsModalOpen(true)}>
+            <button className="btn add-transport-btn" onClick={() => toggleModal()}>
               <i className="bi bi-plus-circle"></i> Add Transport
             </button>
           </div>

@@ -68,6 +68,8 @@ exports.addDistributor = async (req, res) => {
         }
         const user = await User.create({
             username: contact_person_name,
+            company_name: companyname,
+            credit_limit:  creditlimit,
             email,
             mobile_number : phoneno,
             password: hashedPassword,
