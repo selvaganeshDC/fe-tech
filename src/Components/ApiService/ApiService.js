@@ -1,2 +1,2 @@
-const baseurl ='https://develop.rimhub.in'
+const baseurl ='https://web.rimhub.in'
 export default baseurl
