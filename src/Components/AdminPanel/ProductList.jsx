@@ -8,6 +8,7 @@ import baseurl from "../ApiService/ApiService";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import Swal from "sweetalert2";
 
 const ProductList = () => {
   const navigate = useNavigate();
@@ -58,33 +59,105 @@ const ProductList = () => {
     navigate(`productViewDetails/${product.pid}`);
   };
 
-  const handleEditProduct = (product) => {
-    setCurrentProduct(product);
-    setExistingImages(
-      product.images.map((img, index) => ({
-        id: index,
-        image_path: img.image_path,
-      }))
-    );
-    setIsModalOpen(true);
-    setError("");
-  };
+  const handleEditProduct = async (product) => {
+    // First show confirmation dialog
+    const result = await Swal.fire({
+        title: "Do you want to edit this product?",
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: "Yes, edit",
+        denyButtonText: `No, don't edit`,
+        icon: "question"
+    });
+
+    if (result.isConfirmed) {
+        // Proceed with opening the edit modal
+        setCurrentProduct(product);
+        setExistingImages(
+            product.images.map((img, index) => ({
+                id: index,
+                image_path: img.image_path,
+            }))
+        );
+        setIsModalOpen(true);
+        setError("");
+        
+        // Show success message
+        await Swal.fire({
+            title: "Ready to edit!",
+            text: "You can now make your changes.",
+            icon: "success",
+            confirmButtonColor: '#F24E1E'
+        });
+    } else if (result.isDenied) {
+        // User chose not to edit
+        await Swal.fire({
+            title: "Cancelled",
+            text: "No changes will be made",
+            icon: "info",
+            confirmButtonColor: '#F24E1E'
+        });
+    }
+};
+
+// You might also want a separate function for saving changes
+const handleSaveChanges = async () => {
+    const result = await Swal.fire({
+        title: "Do you want to save the changes?",
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: "Save",
+        confirmButtonColor: '#F24E1E',
+        denyButtonText: `Don't save`
+    });
+
+    if (result.isConfirmed) {
+        // Call your save function here
+        // await handleSubmit();  // Your existing submit function
+        await Swal.fire("Saved!", "", "success");
+    } else if (result.isDenied) {
+        await Swal.fire("Changes are not saved", "", "info");
+    }
+};
 
   const handleDeleteProduct = async (product) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this product?"
-    );
-    if (confirmed) {
-      try {
-        await axios.delete(`${baseurl}/api/deleteProductById/${product.pid}`);
-        alert("Product deleted successfully");
-        fetchProducts();
-      } catch (error) {
-        console.error("Error deleting product:", error);
-        alert("Failed to delete product");
-      }
+    // Show confirmation SweetAlert
+    const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: '#F24E1E',
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!"
+    });
+
+    // If user confirmed
+    if (result.isConfirmed) {
+        try {
+            await axios.delete(`${baseurl}/api/deleteProductById/${product.pid}`);
+            
+            // Show success message
+            await Swal.fire({
+                title: "Deleted!",
+                text: "Product has been deleted successfully.",
+                icon: "success"
+            });
+            
+            // Refresh product list
+            fetchProducts();
+        } catch (error) {
+            console.error("Error deleting product:", error);
+            
+            // Show error message
+            await Swal.fire({
+                title: "Error!",
+                text: "Failed to delete product.",
+                icon: "error"
+            });
+        }
     }
-  };
+};
 
   const handleDeleteImage = async (imageIndex) => {
     setExistingImages(
@@ -163,7 +236,19 @@ const ProductList = () => {
       setImageFiles([]);
       setExistingImages([]);
       setError("");
-      alert(response.data.message);
+      
+      // Replaced alert with SweetAlert
+      Swal.fire({
+        title: "Good job!",
+        text: currentProduct?.pid ? "Product updated Successfully" : "Product added Successfully",
+        icon: "success",
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#F24E1E',
+        customClass: {
+        confirmButton: 'custom-swal-button'
+        }
+      });
+      
       toggleModal();
     } catch (error) {
       console.error(error);
@@ -510,38 +595,56 @@ const ProductList = () => {
                   <label>Upload Images</label>
                   <div className="image-upload-section">
                     {/* Existing Images */}
-                    {existingImages.map((image, index) => (
-                      <div key={`existing-${index}`} className="image-preview">
+                     {existingImages.map((image, index) => (
+                      <div
+                        key={`existing-${index}`}
+                        className="position-relative"
+                      >
                         <img
                           src={`${baseurl}/${image.image_path}`}
                           alt={`Existing ${index}`}
+                          className="rounded"
+                          style={{
+                            width: "100px",
+                            height: "100px",
+                            objectFit: "cover",
+                          }}
                         />
                         <button
                           type="button"
-                          className="delete-image"
+                          className="btn btn-sm btn-danger position-absolute top-0 end-0"
                           onClick={() => handleDeleteImage(index)}
                         >
-                          <X size={16} />
+                          <X size={12} />
                         </button>
                       </div>
                     ))}
 
                     {/* New Images */}
                     {imageFiles.map((file, index) => (
-                      <div key={`new-${index}`} className="image-preview">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`New ${index}`}
-                        />
-                        <button
-                          type="button"
-                          className="delete-image"
-                          onClick={() => removeNewImage(index)}
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ))}
+                          <div
+                            key={`new-${index}`}
+                            className="position-relative"
+                          >
+                            <img
+                              src={URL.createObjectURL(file)}
+                              alt={`New ${index}`}
+                              className="rounded"
+                              style={{
+                                width: "100px",
+                                height: "100px",
+                                objectFit: "cover",
+                              }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-danger position-absolute top-0 end-0"
+                              onClick={() => removeNewImage(index)}
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
 
                     {/* Upload Button */}
                     <label className="upload-box">

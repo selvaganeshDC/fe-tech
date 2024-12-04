@@ -2,13 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Pagination } from "react-bootstrap";
 import "./AdminPanel.css";
 import {
-  Box,
   Upload,
   Eye,
   PencilLine,
   Trash2,
   X,
-  SearchIcon,
 } from "lucide-react";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import axios from "axios";
@@ -16,6 +14,7 @@ import baseurl from "../ApiService/ApiService";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import Swal from "sweetalert2";
 
 const Distributors = () => {
   const navigate = useNavigate();
@@ -78,12 +77,12 @@ const Distributors = () => {
     setError("");
 
     // Image validation
-    if (imageFiles.length === 0) {
+    if (imageFiles.length === 0 && existingImages.length === 0) {
       setError("Please upload at least one image.");
       return;
     }
 
-    if (imageFiles.length > 1) {
+    if (imageFiles.length > 1 && existingImages.length > 1) {
       setError("You can upload only one image.");
       return;
     }
@@ -133,19 +132,44 @@ const Distributors = () => {
         url,
         data: formData,
       });
-      if(response.status === 201 || response.status===201){
-        alert(response.data.message);
-        fetchDistributors();
-        resetForm();
-        toggleModal();
+
+      if (response.status === 201 || response.status === 200) {
+        // Determine the appropriate icon
+        const iconType =()=>{
+          if(response.data.message === "Distributor added successfully" || response.data.message === "Distributor updated successfully"){
+            return "success";
+          }
+          else{
+            return "error";
+          }
+        } 
+      
+        // SweetAlert for success
+        Swal.fire({
+          title: "Good job!",
+          text: response.data.message || "Distributor added successfully!",
+          icon: iconType, 
+          confirmButtonColor: "#F24E1E",
+        });
+      
+        fetchDistributors(); // Refresh the distributors list
+        resetForm(); // Reset the form fields
+        toggleModal(); // Close the modal
       }
+      
       else{
         setError(response.data.message);
       }
      
     } catch (error) {
       console.error("Error submitting form:", error);
-      setError(error.response?.data?.message || "Failed to save distributor");
+      
+      // Optionally, you can use SweetAlert for error as well
+      Swal.fire({
+        title: "Error!", 
+        text: error.response?.data?.message || "Failed to save distributor", 
+        icon: "error"
+      });
     }
   };
 
@@ -173,21 +197,44 @@ const Distributors = () => {
   };
 
   const handleDeleteDistributor = async (distributor) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this distributor?"
-    );
-    if (confirmed) {
-      try {
-        await axios.delete(
-          `${baseurl}/api/deleteDistributorById/${distributor.did}`
-        );
-        alert("Distributor deleted successfully");
-        fetchDistributors();
-      } catch (error) {
-        console.error("Error deleting distributor:", error);
-        alert("Failed to delete distributor");
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#F24E1E",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await axios.delete(
+            `${baseurl}/api/deleteDistributorById/${distributor.did}`
+          );
+          
+          // Show success SweetAlert after deletion
+          Swal.fire({
+            title: "Deleted!",
+            text: "Distributor deleted successfully.",
+            icon: "success",
+            confirmButtonColor: "#F24E1E",
+          });
+  
+          // Fetch updated distributors list
+          fetchDistributors();
+        } catch (error) {
+          console.error("Error deleting distributor:", error);
+          
+          // Show error SweetAlert if deletion fails
+          Swal.fire({
+            title: "Error!",
+            text: "Failed to delete distributor",
+            icon: "error",
+            confirmButtonColor: "#F24E1E",
+          });
+        }
       }
-    }
+    });
   };
 
   const handleDeleteImage = async (imageIndex) => {

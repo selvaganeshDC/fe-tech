@@ -20,12 +20,13 @@ const NavBar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [selectedNotification, setSelectedNotification] = useState(null);
-  const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [loggedUser, setLoggedUser] = useState({});
   const navigate = useNavigate();
-
+  const [location, setLocation] = useState("Fetching location...");
+  const [map, setMap] = useState(null);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
   useEffect(() => {
     const handleResize = () => setScreenWidth(window.innerWidth);
     const userData = JSON.parse(localStorage.getItem("userData"));
@@ -73,14 +74,7 @@ const NavBar = () => {
   //   { id: 2, type: "complaint", title: "Complaint", message: "New complaint received." },
   //   { id: 3, type: "order", title: "Order Update", message: "Order #124 has been shipped." },
   // ];
-  const handleMoveMainpage = () =>{
-    if(loggedUser.role === 'technician'){
-      navigate('/User/StoreDetails');
-    }
-    else if(loggedUser.role === 'distributor'){
-      navigate('/');
-    }
-  }
+
   const handleClickNotify = () => setShowNotifications(!showNotifications);
 
   const toggleUserDropdown = () => setToggleUserDropdown(!isToggleUserDropdown);
@@ -107,18 +101,96 @@ const NavBar = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchCurrentLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+            console.log(latitude)
+            console.log(longitude)
+  
+            try {
+              const apiKey = 'a3317655231447b6b370288bb881de3f';
+              const response = await axios.get(
+                `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${apiKey}`
+              );
+  
+              if (response.data.results.length > 0) {
+                const components = response.data.results[0].components;
+                console.log('Location Components:', components);
+  
+                const city = components.city;
+                const state = components.state;
+                const country = components.country;
+                const county = components.county;
+  
+                const district = city || county || "Location not found";
+                const stateName = state || "State not available";
+                const countryName = country || "Country not available";
+  
+                setLocation(`${district}, ${stateName}, ${countryName}`);
+  
+                // Check if Google Maps is loaded
+                if (window.google && window.google.maps) {
+                  const mapOptions = {
+                    center: { lat: latitude, lng: longitude },
+                    zoom: 14,
+                  };
+  
+                  const mapElement = document.getElementById("map");
+                  if (mapElement) {
+                    const newMap = new window.google.maps.Map(mapElement, mapOptions);
+                    
+                    new window.google.maps.Marker({
+                      position: { lat: latitude, lng: longitude },
+                      map: newMap,
+                      title: "Your Location",
+                    });
+                  }
+                }
+              } else {
+                setLocation("Location not found");
+              }
+            } catch (error) {
+              console.error("Detailed geocoding error:", {
+                message: error.message,
+                response: error.response,
+                request: error.request
+              });
+              setLocation("Unable to fetch location");
+            }
+          },
+          (error) => {
+            console.error("Geolocation error:", {
+              code: error.code,
+              message: error.message
+            });
+            setLocation("Unable to fetch location");
+          }
+        );
+      } else {
+        setLocation("Geolocation not supported by your browser");
+      }
+    };
+  
+    fetchCurrentLocation();
+  }, []); // Empty dependency array
+
   return (
     <nav>
       {screenWidth > 768 ? (
         <div className="navbar py-2 container-fluid d-flex align-items-center">
           <div className="d-flex align-items-center">
-            <a href="#" className="text-decoration-none">
+            <a href="" className="text-decoration-none">
               <i className="bi bi-geo-alt-fill text-danger"></i>{" "}
-              <span style={{ color: "black" }}>Location</span>
+              <span style={{ color: "black" }}>{location}</span>
+              <div id="map"></div>
             </a>
           </div>
           <div className="d-flex align-items-center">
-            <img src={RIM} alt="RIM Logo" onClick={handleMoveMainpage} style={{ height: "50px" }} />
+            <a href="/"><img src={RIM} alt="RIM Logo" style={{ height: "50px" }} /></a>
           </div>
           <div className="d-flex align-items-center gap-3 position-relative">
             <img
@@ -314,149 +386,155 @@ const NavBar = () => {
         </div>
       )}
        {showNotifications && (
-        <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-start justify-content-end" style={{ zIndex: 2000 }}>
-          {/* Semi-transparent background overlay */}
+  <div
+    className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-start justify-content-end"
+    style={{ zIndex: 2000 }}
+  >
+    {/* Semi-transparent background overlay */}
+    <div
+      className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
+      onClick={() => setShowNotifications(false)}
+    ></div>
+
+    {/* Notification panel */}
+    <div
+      className="position-relative bg-white mt-4 mx-3 rounded shadow-lg"
+      style={{ maxWidth: '500px', width: '100%' }}
+    >
+      <div className="p-3">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5 className="mb-0">Notifications</h5>
+          <button
+            className="btn btn-link border border-danger rounded-circle text-decoration-none p-0 text-danger"
+            onClick={() => {
+              setShowNotifications(false);
+              setShowAllNotifications(false); 
+              setSelectedNotification(null);
+            }}
+          >
+            <X className="fs-5" />
+          </button>
+        </div>
+
+        {/* Notification Details Modal */}
+        {selectedNotification && (
           <div
-            className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
-            onClick={() => setShowNotifications(false)}
-          ></div>
-
-          {/* Notification panel */}
-          <div className="position-relative bg-white mt-4 mx-3 rounded shadow-lg" style={{ maxWidth: '500px', width: '100%' }}>
-            <div className="p-3">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="mb-0">Notifications</h5>
-                <button
-                  className="btn btn-link border border-danger rounded-circle text-decoration-none p-0 text-danger"
-                  onClick={() => {
-                    setShowNotifications(false);
-                    setShowAllNotifications(false); 
-                    setSelectedNotification(null);
-                  }}
-                >
-                  <X className="fs-5" />
-                </button>
-              </div>
-
-              {/* Notification Details Modal */}
-              {selectedNotification && (
-                <div 
-                className="modal fade show" 
-                style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} 
-                tabIndex="-1"
-              >
-                <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                  <div className="modal-content">
-                    <div className="modal-header">
-                      <h5 className="modal-title">Notification Details</h5>
-                      <button 
-                        type="button" 
-                        className="btn-close" 
-                        onClick={() => setSelectedNotification(null)}
-                        aria-label="Close"
-                      ></button>
-                    </div>
-                    <div className="modal-body">
-                      <div className="table-responsive">
-                        <table className="table table-striped">
-                          <tbody>
-                            <tr>
-                              <th className="col-4">Owner Name</th>
-                              <td>{selectedNotification.details?.forumOwnerId || selectedNotification.details.distributorName}</td>
-                            </tr>
-                            <tr>
-                              <th>Phone</th>
-                              <td>{selectedNotification.details?.forumOwnerPhone || selectedNotification.details.distributorPhone}</td>
-                            </tr>
-                            <tr>
-                              <th>Email</th>
-                              <td>{selectedNotification.details?.forumOwnerEmail || selectedNotification.details.distributorEmail}</td>
-                            </tr>
-                            <tr>
-                              <th>Address</th>
-                              <td>{selectedNotification.details?.forumOwnerAddress || selectedNotification.details.distributorAddress}</td>
-                            </tr>
-                            <tr>
-                              <th>Taken At</th>
-                              <td>{new Date(selectedNotification.details.takenAt).toLocaleString()}</td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+            className="modal fade show"
+            style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}
+            tabIndex="-1"
+          >
+            <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Notification Details</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setSelectedNotification(null)}
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <div className="table-responsive">
+                    <table className="table table-striped">
+                      <tbody>
+                        <tr>
+                          <th className="col-4">Owner Name</th>
+                          <td>{selectedNotification.details?.forumOwnerId || selectedNotification.details.distributorName}</td>
+                        </tr>
+                        <tr>
+                          <th>Phone</th>
+                          <td>{selectedNotification.details?.forumOwnerPhone || selectedNotification.details.distributorPhone}</td>
+                        </tr>
+                        <tr>
+                          <th>Email</th>
+                          <td>{selectedNotification.details?.forumOwnerEmail || selectedNotification.details.distributorEmail}</td>
+                        </tr>
+                        <tr>
+                          <th>Address</th>
+                          <td>{selectedNotification.details?.forumOwnerAddress || selectedNotification.details.distributorAddress}</td>
+                        </tr>
+                        <tr>
+                          <th>Taken At</th>
+                          <td>{new Date(selectedNotification.details.takenAt).toLocaleString()}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
-              )}
-
-              <div className="overflow-auto" style={{ maxHeight: '70vh' }}>
-                {loading ? (
-                  <div className="text-center py-3">Loading notifications...</div>
-                ) : error ? (
-                  <div className="text-danger text-center py-3">{error}</div>
-                ) : notifications.length === 0 ? (
-                  <div className="text-center py-3">No notifications</div>
-                ) : (
-                  <>
-                  {notifications.slice(0, 3).map((notification) => (
-                    <div
-                      key={notification.id}
-                      className="d-flex align-items-start p-3 mb-2 border-bottom position-relative"
-                    >
-                      <div className="flex-grow-1">
-                        <strong className="d-block mb-1">{notification.title}</strong>
-                        <small className="text-muted">{notification.message}</small>
-                      </div>
-                      <button
-                        className="btn btn-sm btn-outline-info ms-2"
-                        onClick={() => handleShowDetails(notification)}
-                      >
-                        <Info size={16} />
-                      </button>
-                    </div>
-                  ))}
-    
-                  {notifications.length > 3 && !showAllNotifications && (
-                    <div className="text-center py-3">
-                      <button
-                        className="btn"
-                        style={{
-                          backgroundColor: "orangered",
-                          color: "white",
-                          border: "none",
-                        }}
-                        onClick={() => setShowAllNotifications(true)}
-                      >
-                        View More
-                      </button>
-                    </div>
-                  )}
-    
-                  {showAllNotifications &&
-                    notifications.slice(3).map((notification) => (
-                      <div
-                        key={notification.id}
-                        className="d-flex align-items-start p-3 mb-2 border-bottom position-relative"
-                      >
-                        <div className="flex-grow-1">
-                          <strong className="d-block mb-1">{notification.title}</strong>
-                          <small className="text-muted">{notification.message}</small>
-                        </div>
-                        <button
-                          className="btn btn-sm btn-outline-info ms-2"
-                          onClick={() => handleShowDetails(notification)}
-                        >
-                          <Info size={16} />
-                        </button>
-                      </div>
-                    ))}
-                </>
-                )}
-              </div>
             </div>
           </div>
+        )}
+
+        <div className="overflow-auto" style={{ maxHeight: '70vh' }}>
+          {loading ? (
+            <div className="text-center py-3">Loading notifications...</div>
+          ) : error ? (
+            <div className="text-danger text-center py-3">{error}</div>
+          ) : notifications.length === 0 ? (
+            <div className="text-center py-3">No notifications</div>
+          ) : (
+            <>
+              {notifications.slice(0, 3).map((notification) => (
+                <div
+                  key={notification.id}
+                  className="d-flex align-items-start p-3 mb-2 border-bottom position-relative"
+                >
+                  <div className="flex-grow-1">
+                    <strong className="d-block mb-1">{notification.title}</strong>
+                    <small className="text-muted">{notification.message}</small>
+                  </div>
+                  <button
+                    className="btn btn-sm btn-outline-info ms-2"
+                    onClick={() => handleShowDetails(notification)}
+                  >
+                    <Info size={16} />
+                  </button>
+                </div>
+              ))}
+
+              {notifications.length > 3 && !showAllNotifications && (
+                <div className="text-center py-3">
+                  <button
+                    className="btn"
+                    style={{
+                      backgroundColor: "orangered",
+                      color: "white",
+                      border: "none",
+                    }}
+                    onClick={() => setShowAllNotifications(true)}
+                  >
+                    View More
+                  </button>
+                </div>
+              )}
+
+              {showAllNotifications &&
+                notifications.slice(3).map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="d-flex align-items-start p-3 mb-2 border-bottom position-relative"
+                  >
+                    <div className="flex-grow-1">
+                      <strong className="d-block mb-1">{notification.title}</strong>
+                      <small className="text-muted">{notification.message}</small>
+                    </div>
+                    <button
+                      className="btn btn-sm btn-outline-info ms-2"
+                      onClick={() => handleShowDetails(notification)}
+                    >
+                      <Info size={16} />
+                    </button>
+                  </div>
+                ))}
+            </>
+          )}
         </div>
-      )}
+      </div>
+    </div>
+  </div>
+)}
     </nav>
   );
 };
