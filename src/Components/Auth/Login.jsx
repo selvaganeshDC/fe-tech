@@ -4,7 +4,7 @@ import './Auth.css';
 import logo from '../User/Assets/RimLogo.png';
 import { useNavigate } from 'react-router-dom';
 import baseurl from '../ApiService/ApiService';
-
+import { Eye, EyeOff } from 'lucide-react';
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -13,7 +13,7 @@ const Login = () => {
   });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState(null);
-
+  const [showPassword, setShowPassword] = useState(false);
   // Validation Functions
   const validateEmail = (email) => {
     if (!email) return 'Email is required';
@@ -77,6 +77,10 @@ const Login = () => {
     // Return true if no errors
     return !Object.values(newErrors).some(error => error !== '');
   };
+    // Toggle Password Visibility
+    const togglePasswordVisibility = () => {
+      setShowPassword(!showPassword);
+    };
 
   // Handle Login Submission
   const handleLogin = async (e) => {
@@ -147,14 +151,24 @@ const Login = () => {
           
           <div className="form-group">
             <label>Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              onBlur={handleChange}
-              required
-            />
+            <div className="password-input-container">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                onBlur={handleChange}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle-button"
+                onClick={togglePasswordVisibility}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             {errors.password && (
               <span className="error-text">{errors.password}</span>
             )}

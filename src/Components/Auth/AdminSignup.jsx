@@ -4,6 +4,7 @@ import './Auth.css';
 import logo from '../User/Assets/RimLogo.png';
 import { useNavigate } from 'react-router-dom';
 import baseurl from '../ApiService/ApiService';
+import { Eye, EyeOff } from 'lucide-react';
 
 const AdminSignup = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const AdminSignup = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState(null);
-
+  const [showPassword, setShowPassword] = useState(false);
   // Validation patterns
   const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -115,6 +116,9 @@ const AdminSignup = () => {
       setIsSubmitting(false);
     }
   };
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const inputStyle = {
     width: '100%',
@@ -138,7 +142,7 @@ const AdminSignup = () => {
         <h3>Admin Registration</h3>
         <form onSubmit={handleAdminSignup} noValidate>
           <div className="form-group">
-            <label>Email*</label>
+            <label>Email</label>
             <input
               type="email"
               name="email"
@@ -154,9 +158,10 @@ const AdminSignup = () => {
           </div>
 
           <div className="form-group">
-            <label>Password*</label>
+            <label>Password</label>
+            <div className="password-input-container">
             <input
-              type="password"
+             type={showPassword ? "text" : "password"}
               name="password"
               value={formData.password}
               onChange={handleInputChange}
@@ -166,6 +171,15 @@ const AdminSignup = () => {
               }}
               required
             />
+            <button
+                type="button"
+                className="password-toggle-button"
+                onClick={togglePasswordVisibility}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             {errors.password && <div style={errorStyle}>{errors.password}</div>}
           </div>
 

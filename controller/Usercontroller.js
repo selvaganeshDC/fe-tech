@@ -11,7 +11,7 @@ exports.registerUser = async (req, res) => {
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
-
+    
     const { username, email, password, confirm_password } = req.body;
 
     if (password !== confirm_password) {

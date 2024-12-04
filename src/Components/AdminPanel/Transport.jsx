@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Eye, PencilLine, Trash2 } from "lucide-react";
+import { Eye, PencilLine, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import axios from "axios";
 import baseurl from "../ApiService/ApiService";
 import "./AdminPanel.css";
+import Swal from "sweetalert2";
+import { Pagination } from "react-bootstrap";
 
 const Transport = () => {
   const [transports, setTransports] = useState([]);
@@ -19,6 +21,10 @@ const Transport = () => {
     phone: "",
     email: "",
   });
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchTransport();
@@ -45,6 +51,27 @@ const Transport = () => {
     }
   };
 
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredTransports.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredTransports.length / itemsPerPage);
+
+  // Page change handler
+  const handlePageChange = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
+  };
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pageNumbers.push(i);
+    }
+    return pageNumbers;
+  };
+
   // Get unique locations for dropdown
   const getUniqueLocations = () => {
     return [...new Set(transports.map(transport => transport.location))];
@@ -52,15 +79,14 @@ const Transport = () => {
 
   const handleSearch = () => {
     if (!searchLocation) {
-      // If no search term, show all transports
       setFilteredTransports(transports);
     } else {
-      // Filter transports by selected location
       const filtered = transports.filter((transport) => 
         transport.location === searchLocation
       );
       setFilteredTransports(filtered);
     }
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   const fetchTransportDetails = async (tid) => {
@@ -88,19 +114,22 @@ const Transport = () => {
   };
 
   const toggleModal = () => {
-    if (!isModalOpen) {
-      // Reset form when opening modal
-      setCurrentTransport({
-        travels_name: "",
-        location: "",
-        dirver_name: "",
-        contact_person_name: "",
-        phone: "",
-        email: "",
-      });
-    }
-    setIsModalOpen(!isModalOpen);
+    setIsModalOpen((prev) => {
+      // Reset form only when closing the modal or opening it fresh
+      if (!prev) {
+        setCurrentTransport({
+          travels_name: "",
+          location: "",
+          dirver_name: "",
+          contact_person_name: "",
+          phone: "",
+          email: "",
+        });
+      }
+      return !prev;
+    });
   };
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -138,11 +167,11 @@ const Transport = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     if (!validateForm()) {
       return;
     }
-
+  
     try {
       if (currentTransport.tid) {
         // Update existing transport
@@ -150,39 +179,61 @@ const Transport = () => {
           `${baseurl}/api/updatetransport/${currentTransport.tid}`,
           currentTransport
         );
-
+  
         if (response.status === 200) {
           setTransports((prev) =>
             prev.map((transport) =>
               transport.tid === currentTransport.tid ? response.data : transport
             )
           );
-          alert("Transport updated successfully!");
+  
+          // Success alert for update
+          await Swal.fire({
+            title: "Good job!",
+            text: "Transport updated successfully!",
+            icon: "success",
+            confirmButtonColor: "#F24E1E",
+          });
         }
+        await fetchTransport();
       } else {
         // Add new transport
         const response = await axios.post(
           `${baseurl}/api/addtransport`,
           currentTransport
         );
-
+  
         if (response.status === 200 || response.status === 201) {
-          alert("Transport added successfully!");
+          // Success alert for new addition
+          await Swal.fire({
+            title: "Good job!",
+            text: "Transport added successfully!",
+            icon: "success",
+            confirmButtonColor: "#F24E1E",
+          });
+  
           await fetchTransport(); // Refresh the list after successful addition
         } else {
           throw new Error("Failed to add transport");
         }
       }
-
-      toggleModal();
+  
+      toggleModal(); // Close and reset the modal
     } catch (error) {
       console.error("Error adding/updating transport:", error);
-      alert(
-        error.response?.data?.message ||
-          "An error occurred while saving the transport. Please try again later."
-      );
+  
+      // Error alert
+      await Swal.fire({
+        title: "Error!",
+        text:
+          error.response?.data?.message ||
+          "An error occurred while saving the transport. Please try again later.",
+        icon: "error",
+        confirmButtonColor: "#F24E1E",
+      });
     }
   };
+  
 
   const handleEditTransport = (transport) => {
     setCurrentTransport({
@@ -191,69 +242,90 @@ const Transport = () => {
       email: transport.email || "",
     });
     setIsModalOpen(true);
+
   };
 
-  const handleDeleteTransport = async (transport) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this transport?"
-    );
-    if (confirmDelete) {
-      try {
-        const response = await axios.delete(
-          `${baseurl}/api/deletetransport/${transport.tid}`
-        );
+const handleDeleteTransport = async (transport) => {
+    // Show confirmation SweetAlert
+    const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#F24E1E",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!"
+    });
 
-        if (response.status === 204) {
-          await fetchTransport();
-          alert("Transport deleted successfully!");
-        } else {
-          throw new Error("Failed to delete transport");
+    // If user confirmed
+    if (result.isConfirmed) {
+        try {
+            const response = await axios.delete(
+                `${baseurl}/api/deletetransport/${transport.tid}`
+            );
+
+            if (response.status === 204) {
+                await fetchTransport();
+                
+                // Show success message
+                await Swal.fire({
+                    title: "Deleted!",
+                    text: "Transport has been deleted successfully.",
+                    icon: "success",
+                    confirmButtonColor: "#F24E1E"
+                });
+            } else {
+                throw new Error("Failed to delete transport");
+            }
+        } catch (error) {
+            console.error("Error deleting transport:", error);
+            
+            // Show error message
+            await Swal.fire({
+                title: "Error!",
+                text: error.response?.data?.message || 
+                      "An error occurred while deleting the transport. Please try again later.",
+                icon: "error",
+                confirmButtonColor: "#F24E1E"
+            });
         }
-      } catch (error) {
-        console.error("Error deleting transport:", error);
-        alert(
-          error.response?.data?.message ||
-            "An error occurred while deleting the transport. Please try again later."
-        );
-      }
     }
-  };
+};
 
   return (
     <>
       <div className="container mt-3 bg-white p-4 rounded shadow-sm">
-        <div className="row align-items-center">
-          <div className="col-md-6 mb-3">
-            <select
-              className="form-select"
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-            >
-              <option value="">Select Location</option>
-              {getUniqueLocations().map((location, index) => (
-                <option key={index} value={location}>
-                  {location}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col-md-3 mb-3">
-            <button 
-              className="btn" 
-              id="search-location"
-              onClick={handleSearch}
-              // disabled={!searchLocation}
-            >
-              Search
-            </button>
-          </div>
-          <div className="col-md-3 mb-3 text-md-end">
-            <button className="btn add-transport-btn" onClick={() => toggleModal()}>
-              <i className="bi bi-plus-circle"></i> Add Transport
-            </button>
-          </div>
+      <div className="row align-items-center">
+        <div className="col-8 col-md-6 mb-3">
+          <select
+            className="form-select"
+            value={searchLocation}
+            onChange={(e) => setSearchLocation(e.target.value)}
+          >
+            <option value="">Select Location</option>
+            {getUniqueLocations().map((location, index) => (
+              <option key={index} value={location}>
+                {location}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="col-4 col-md-3 mb-3">
+          <button 
+            className="btn w-100" 
+            id="search-location"
+            onClick={handleSearch}
+          >
+            Search
+          </button>
+        </div>
+        <div className="col-12 col-md-3 mb-3 text-md-end">
+          <button className="btn add-transport-btn w-sm-100 w-md-auto" onClick={toggleModal}>
+            <i className="bi bi-plus-circle me-2"></i> Add Transport
+          </button>
         </div>
       </div>
+    </div>
 
       {/* Responsive Table */}
       <div className="container-fluid p-0 mt-5">
@@ -273,10 +345,10 @@ const Transport = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTransports.length > 0 ? (
-                      filteredTransports.map((transport, index) => (
+                    {currentItems.length > 0 ? (
+                      currentItems.map((transport, index) => (
                         <tr key={transport.tid || index}>
-                          <td className="py-3 px-4">{index + 1}</td>
+                          <td className="py-3 px-4">{indexOfFirstItem + index + 1}</td>
                           <td className="py-3 px-4">{transport.location || "N/A"}</td>
                           <td className="py-3 px-4">{transport.travels_name || "N/A"}</td>
                           <td className="py-3 px-4">{transport.phone || "N/A"}</td>
@@ -320,6 +392,50 @@ const Transport = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Pagination */}
+       <div className="container d-flex justify-content-between align-items-center mt-4">
+        <div className="showing-entries">
+          Showing {filteredTransports.length > 0 ? indexOfFirstItem + 1 : 0} to{" "}
+          {Math.min(indexOfLastItem, filteredTransports.length)} of{" "}
+          {filteredTransports.length} entries
+        </div>
+        <nav aria-label="Transport pagination">
+          <ul className="pagination mb-0">
+            <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+              <button 
+                className="page-link" 
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft size={20} />
+              </button>
+            </li>
+            {getPageNumbers().map(number => (
+              <li 
+                key={number} 
+                className={`page-item ${currentPage === number ? 'active' : ''}`}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => handlePageChange(number)}
+                >
+                  {number}
+                </button>
+              </li>
+            ))}
+            <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+              <button 
+                className="page-link" 
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </li>
+          </ul>
+        </nav>
       </div>
 
       {/* View Transport Modal */}
