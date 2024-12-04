@@ -107,6 +107,7 @@ const Forum = () => {
                                 color: "white",
                                 border: "none",
                               }}>Take</button>
+                              
                       </div>
                     </div>
                     </div>
